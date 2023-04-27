@@ -1,0 +1,22 @@
+<% @meta_title = @host.to_s %>
+
+<div class="container-sm">
+  <h1 class='mb-4'>
+    <%= link_to @host, @host.url, target: :_blank %>
+  </h1>
+
+  <ul class="nav nav-tabs my-3">
+    <li class="nav-item">
+      <a class="nav-link active" aria-current="page">
+        Repositories
+        <span class="badge bg-secondary rounded-pill">
+          <%= number_with_delimiter @host.repositories_count %>
+        </span>
+      </a>
+    </li>
+    <%= render 'sort' %>
+  </ul>
+
+  <%= render @repositories %>
+  <%== pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>  
+</div>

@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: "Ecosyste.ms: issues"
-  description: "An open API service providing commit metadata for open source projects. "
+  description: "An open API service providing issue metadata for open source projects. "
   contact:
     name: Ecosyste.ms
     email: support@ecosyste.ms

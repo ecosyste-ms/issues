@@ -1,0 +1,33 @@
+<div class="card mb-3 repository d-flex" id="repository_<%= repository.id %>">
+  <div class="card-body pb-1">
+    <div class="d-flex">
+      
+      <div class="flex-grow-1 ms-3 text-break">
+        <h5 class='card-title'>
+          <% if @host.nil? %>
+            <%= link_to repository.host.name, host_path(repository.host.name) %> / <% end %>
+            <%= link_to repository, host_repository_path(repository.host, repository) %>
+        </h5>
+      
+        <%# todo description %>
+        <p class="card-subtitle mb-2 text-muted"><i><small>
+          Branch: <%= repository.default_branch %><br>
+          <% if repository.total_issues %>
+              Total issues: <%= number_with_delimiter repository.total_issues %><br>
+              Total issueters: <%= number_with_delimiter repository.total_issueters %><br>
+              Avg issues per issueter: <%= number_with_delimiter repository.mean_issues.round(3) %><br>
+              Development Distribution Score (<a href='https://report.opensustain.tech/chapters/development-distribution-score.html' target="_blank">DDS</a>): <%= repository.dds.round(3) %><br>
+          <% end %>
+          <% if repository.last_synced_at %>
+              Last synced: <%= distance_of_time_in_words_to_now repository.last_synced_at %> ago
+          <% end %>
+          
+        </small></i></p>
+      </div>
+      <div class="flex-shrink-0">
+        <%# todo avatar url %>
+        <img src="" class="rounded" height='40' width='40' onerror="this.style.display='none'">
+      </div>  
+    </div>
+  </div>
+</div>
