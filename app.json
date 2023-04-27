@@ -1,0 +1,24 @@
+{
+  "cron": [
+    {
+      "command": "bundle exec rake jobs:check_statuses",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "command": "bundle exec rake jobs:clean_up",
+      "schedule": "0 * * * *"
+    },
+    {
+      "command": "bundle exec rake hosts:update_counts",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "command": "bundle exec rake repositories:sync_least_recent",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "command": "bundle exec rake hosts:sync_all",
+      "schedule": "0 0 * * *"
+    }
+  ]
+} 

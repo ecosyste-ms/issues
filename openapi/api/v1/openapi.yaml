@@ -1,0 +1,208 @@
+openapi: 3.0.1
+info:
+  title: "Ecosyste.ms: issues"
+  description: "An open API service providing commit metadata for open source projects. "
+  contact:
+    name: Ecosyste.ms
+    email: support@ecosyste.ms
+    url: https://ecosyste.ms 
+  version: 1.0.0
+  license:
+    name: CC-BY-4.0
+    url: https://creativecommons.org/licenses/by/4.0/
+externalDocs:
+  description: GitHub Repository
+  url: https://github.com/ecosyste-ms/issues
+servers:
+- url: https://issues.ecosyste.ms/api/v1
+paths:
+  /repositories/lookup:
+    get:
+      summary: "Lookup repository metadata"
+      operationId: "repositoriesLookup"
+      parameters:
+        - name: url
+          in: query
+          description: "The URL of the repository to lookup"
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Repository'
+  /hosts:
+    get:
+      summary: list registies
+      operationId: getRegistries
+      parameters:
+        - name: page
+          in: query
+          description: pagination page number 
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records to return 
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Host'
+  /hosts/{hostName}:
+    get:
+      summary: get a host by name
+      operationId: getHost
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - name: page
+          in: query
+          description: pagination page number 
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records to return 
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+  /hosts/{hostName}/repositories:
+    get:
+      summary: get a list of repositories from a host
+      operationId: getHostRepositories
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - name: page
+          in: query
+          description: pagination page number 
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records to return 
+          required: false
+          schema:
+            type: integer
+        - name: created_after
+          in: query
+          description: filter by created_at after given time
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: updated_after
+          in: query
+          description: filter by updated_at after given time
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: sort
+          in: query
+          description: field to order results by
+          required: false
+          schema:
+            type: string
+        - name: order
+          in: query
+          description: direction to order results by
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Repository'
+  /hosts/{hostName}/repositories/{repoName}:
+    get:
+      summary: get a repository from a host
+      operationId: getHostRepository
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - in: path
+          name: repoName
+          schema:
+            type: string
+          required: true
+          description: name of repository
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Repository'
+components:
+  schemas:
+    Host:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        kind:
+          type: string
+        repositories_count:
+          type: integer
+        last_synced_at:
+          type: string
+          format: date-time
+        issues_count:
+          type: integer
+    Repository:
+      type: object
+      properties:
+        full_name:
+          type: string
+        default_branch:
+          type: string
+        last_synced_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
