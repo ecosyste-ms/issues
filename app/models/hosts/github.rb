@@ -61,7 +61,10 @@ module Hosts
     end
 
     def load_issues(repository)
-      issues = api_client.issues(repository.full_name, state: 'all')
+      options = {state: 'all', sort: 'updated', direction: 'desc'}
+      options[:since] = repository.last_synced_at if repository.last_synced_at.present?
+      
+      issues = api_client.issues(repository.full_name, options)
       issues.map do |issue|
         {
           uuid: issue.id,
@@ -79,7 +82,6 @@ module Hosts
           labels: issue.labels.map(&:name),
           assignees: issue.assignees.map(&:login),
           pull_request: issue.pull_request.present?,
-          closed_by: issue.closed_by.try(:login),
           author_association: issue.author_association,
           state_reason: issue.state_reason
         }
