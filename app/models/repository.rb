@@ -79,11 +79,11 @@ class Repository < ApplicationRecord
   end
 
   def issue_labels_count
-    issues.where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| v}.reverse
+    issues.where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
   end
 
   def pull_request_labels_count
-    issues.where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| v}.reverse
+    issues.where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
   end
 
   def bot_issues_count
@@ -94,7 +94,22 @@ class Repository < ApplicationRecord
     issues.where(pull_request: true).where('issues.user ILIKE ?', '%[bot]').count
   end
 
-  # TODO sync issues
+  def issue_author_associations_count
+    issues.where(pull_request: false).group(:author_association).count.sort_by{|k,v| -v }
+  end
+
+  def pull_request_author_associations_count
+    issues.where(pull_request: true).group(:author_association).count.sort_by{|k,v| -v }
+  end
+
+  def issue_authors
+    issues.where(pull_request: false).group(:user).count.sort_by{|k,v| -v }
+  end
+
+  def pull_request_authors
+    issues.where(pull_request: true).group(:user).count.sort_by{|k,v| -v }
+  end
+
   def sync_issues
     remote_issues = host.host_instance.load_issues(self)
     remote_issues.each do |issue|

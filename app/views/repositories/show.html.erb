@@ -14,7 +14,7 @@
     <% if @repository.issues_count %>
       <p>
         Total issues: <%= number_with_delimiter @repository.issues_count %><br>
-        Total pull Requests: <%= number_with_delimiter @repository.pull_requests_count %><br><br>
+        Total pull requests: <%= number_with_delimiter @repository.pull_requests_count %><br><br>
         Average time to close issues: <%= distance_of_time_in_words @repository.avg_time_to_close_issue %><br>
         Average time to close pull requests: <%= distance_of_time_in_words @repository.avg_time_to_close_pull_request %><br><br>
         Total issue authors: <%= number_with_delimiter @repository.issue_authors_count %><br>
@@ -33,7 +33,7 @@
         <div class='col-md-4'>
           <h4>Issue Author Associations</h4>
           <ul>
-            <% @repository.issues.where(pull_request: false).group(:author_association).count.sort_by{|k,v| -v }.each do |author, count| %>
+            <% @repository.issue_author_associations_count.each do |author, count| %>
               <li>
                 <%= author.humanize %>
                 (<%= number_with_delimiter count %>, <%= number_to_percentage count.to_f / @repository.issues_count * 100, precision: 2 %>)
@@ -44,7 +44,7 @@
         <div class='col-md-4'>
           <h4>Pull Request Author Associations</h4>
           <ul>
-            <% @repository.issues.where(pull_request: true).group(:author_association).count.sort_by{|k,v| -v }.each do |author, count| %>
+            <% @repository.pull_request_author_associations_count.each do |author, count| %>
               <li>
                 <%= author.humanize %>
                 (<%= number_with_delimiter count %>, <%= number_to_percentage count.to_f / @repository.pull_requests_count * 100, precision: 2 %>)
@@ -58,7 +58,7 @@
         <div class='col-md-4'>
           <h4>Top Issue Authors</h4>
           <ul>
-            <% @repository.issues.where(pull_request: false).group(:user).count.sort_by{|k,v| -v }.first(15).each do |author, count| %>
+            <% @repository.issue_authors.first(15).each do |author, count| %>
               <li>
                 <%= author %>
                 (<%= number_with_delimiter count %>)
@@ -69,7 +69,7 @@
         <div class='col-md-4'>
           <h4>Top Pull Request Authors</h4>
           <ul>
-            <% @repository.issues.where(pull_request: true).group(:user).count.sort_by{|k,v| -v }.first(15).each do |author, count| %>
+            <% @repository.pull_request_authors.first(15).each do |author, count| %>
               <li>
                 <%= author %>
                 (<%= number_with_delimiter count %>)
@@ -78,7 +78,6 @@
           </ul>
         </div>
       </div>
-
 
       <hr>
       <div class='row'>

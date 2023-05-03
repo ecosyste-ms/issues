@@ -41,7 +41,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_27_142000) do
     t.integer "comments_count"
     t.boolean "pull_request"
     t.datetime "closed_at"
-    t.string "closed_by"
     t.string "author_association"
     t.string "state_reason"
     t.datetime "created_at", null: false

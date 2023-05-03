@@ -15,7 +15,6 @@ class CreateIssues < ActiveRecord::Migration[7.0]
       t.integer :comments_count
       t.boolean :pull_request
       t.datetime :closed_at
-      t.string :closed_by
       t.string :author_association
       t.string :state_reason
 
