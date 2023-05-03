@@ -86,14 +86,6 @@ class Repository < ApplicationRecord
     issues.where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
   end
 
-  def bot_issues_count
-    issues.where(pull_request: false).where('issues.user ILIKE ?', '%[bot]').count
-  end
-
-  def bot_pull_requests_count
-    issues.where(pull_request: true).where('issues.user ILIKE ?', '%[bot]').count
-  end
-
   def issue_author_associations_count
     issues.where(pull_request: false).group(:author_association).count.sort_by{|k,v| -v }
   end
@@ -138,6 +130,9 @@ class Repository < ApplicationRecord
     self.avg_comments_per_issue = issues.where(pull_request: false).average(:comments_count)
     # avg number of comments per pull request
     self.avg_comments_per_pull_request = issues.where(pull_request: true).average(:comments_count)
+
+    self.bot_issues_count = issues.where(pull_request: false).where('issues.user ILIKE ?', '%[bot]').count
+    self.bot_pull_requests_count = issues.where(pull_request: true).where('issues.user ILIKE ?', '%[bot]').count
 
     self.last_synced_at = Time.now
     self.save
