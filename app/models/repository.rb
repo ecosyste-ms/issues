@@ -1,6 +1,8 @@
 class Repository < ApplicationRecord
   belongs_to :host
 
+  has_many :issues, dependent: :delete_all
+
   validates :full_name, presence: true
 
   scope :active, -> { where(status: nil) }
@@ -77,4 +79,40 @@ class Repository < ApplicationRecord
   end
 
   # TODO sync issues
+  def sync_issues
+    remote_issues = host.host_instance.load_issues(self)
+    remote_issues.each do |issue|
+      i = issues.find_or_create_by(uuid: issue[:uuid])
+      i.assign_attributes issue
+      i.time_to_close = i.closed_at - i.created_at if i.closed_at.present?
+      i.save
+    end
+
+    self.issues_count = issues.where(pull_request: false).count
+    self.pull_requests_count = issues.where(pull_request: true).count
+
+    # avg time to close issue
+    self.avg_time_to_close_issue = issues.where(pull_request: false).average(:time_to_close)
+    # avg time to close pull request
+    self.avg_time_to_close_pull_request = issues.where(pull_request: true).average(:time_to_close)
+    # number of issues closed
+    self.issues_closed_count = issues.where(pull_request: false, state: 'closed').count
+    # number of pull requests closed
+    self.pull_requests_closed_count = issues.where(pull_request: true, state: 'closed').count
+    # number of unqiue pull request authors
+    self.pull_request_authors_count = issues.where(pull_request: true).distinct.count(:user)
+    # number of unique issue authors
+    self.issue_authors_count = issues.where(pull_request: false).distinct.count(:user)
+    # number of unique issue closers
+    self.issue_closers_count = issues.where(pull_request: false).distinct.count(:closed_by)
+    # number of unique pull request closers
+    self.pull_request_closers_count = issues.where(pull_request: true).distinct.count(:closed_by)
+    # avg number of comments per issue
+    self.avg_comments_per_issue = issues.where(pull_request: false).average(:comments_count)
+    # avg number of comments per pull request
+    self.avg_comments_per_pull_request = issues.where(pull_request: true).average(:comments_count)
+
+    self.last_synced_at = Time.now
+    self.save
+  end
 end

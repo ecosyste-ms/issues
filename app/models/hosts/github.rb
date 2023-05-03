@@ -60,8 +60,31 @@ module Hosts
       "https://github.com/#{repository.full_name}"
     end
 
-
-
+    def load_issues(repository)
+      issues = api_client.issues(repository.full_name, state: 'all')
+      issues.map do |issue|
+        {
+          uuid: issue.id,
+          node_id: issue.node_id,
+          number: issue.number,
+          title: issue.title,
+          state: issue.state,
+          locked: issue.locked,
+          comments_count: issue.comments,
+          created_at: issue.created_at,
+          updated_at: issue.updated_at,
+          closed_at: issue.closed_at,
+          body: issue.body,
+          user: issue.user.login,
+          labels: issue.labels.map(&:name),
+          assignees: issue.assignees.map(&:login),
+          pull_request: issue.pull_request.present?,
+          closed_by: issue.closed_by.try(:login),
+          author_association: issue.author_association,
+          state_reason: issue.state_reason
+        }
+      end
+    end
 
     def events_for_repo(full_name, event_type: nil, per_page: 100)
       url = "https://timeline.ecosyste.ms/api/v1/events/#{full_name}?per_page=#{per_page}"
