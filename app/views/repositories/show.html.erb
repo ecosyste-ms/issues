@@ -58,7 +58,7 @@
         <div class='col-md-4'>
           <h4>Top Issue Authors</h4>
           <ul>
-            <% @repository.issues.where(pull_request: false).group(:user).count.sort_by{|k,v| -v }.first(30).each do |author, count| %>
+            <% @repository.issues.where(pull_request: false).group(:user).count.sort_by{|k,v| -v }.first(15).each do |author, count| %>
               <li>
                 <%= author %>
                 (<%= number_with_delimiter count %>)
@@ -69,7 +69,7 @@
         <div class='col-md-4'>
           <h4>Top Pull Request Authors</h4>
           <ul>
-            <% @repository.issues.where(pull_request: true).group(:user).count.sort_by{|k,v| -v }.first(30).each do |author, count| %>
+            <% @repository.issues.where(pull_request: true).group(:user).count.sort_by{|k,v| -v }.first(15).each do |author, count| %>
               <li>
                 <%= author %>
                 (<%= number_with_delimiter count %>)
