@@ -4,7 +4,7 @@
       Sort
     </button>
     <ul class="dropdown-menu">
-      <% [['last_synced_at', 'desc', 'Recently Synced'],['total_issues', 'desc', 'Total issues'],['total_issueters','desc','Total issueters'],['mean_issues','desc','Avg issues per issueter'],['dds','desc','Development Distribution Score']].each do |sort, order, name| %>
+      <% [['last_synced_at', 'desc', 'Recently Synced'],['issues_count', 'desc', 'Total issues'],['pull_requests_count','desc','Total pull requests'],['avg_comments_per_issue','desc','Average comments per issue'],['avg_time_to_close_issue','desc','Average time to close issue']].each do |sort, order, name| %>
         <li><a class="dropdown-item <%= 'active' if params[:sort] == sort %>" href="<%= url_for(sort: sort, order: order) %>"><%= name %></a></li>
       <% end %>
     </ul>

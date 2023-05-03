@@ -1,112 +1,111 @@
-<% @meta_title = "#{@repository.full_name} issueters | #{@host}" %>
+<% @meta_title = "#{@repository.full_name} issue stats | #{@host}" %>
 
 <div class="container-sm">
   <h1>
     <%= link_to @host, host_path(@host) %> /
       
-    <%= link_to @repository.full_name, @repository.html_url, target: :_blank %> issueters
+    <%= link_to @repository.full_name, @repository.html_url, target: :_blank %> issue stats
   </h1>
 
   <% if @repository.last_synced_at %>
     <p class="card-subtitle mb-2 text-muted"><i><small>
         Last synced: <%= distance_of_time_in_words_to_now @repository.last_synced_at %> ago
     </small></i></p>
-    <% if @repository.total_issues %>
+    <% if @repository.issues_count %>
       <p>
-        Total issues: <%= number_with_delimiter @repository.total_issues %><br>
-        Total issueters: <%= number_with_delimiter @repository.total_issueters %><br>
-        Avg issues per issueter: <%= number_with_delimiter @repository.mean_issues.round(3) %><br>
-        Development Distribution Score (<a href='https://report.opensustain.tech/chapters/development-distribution-score.html' target="_blank">DDS</a>): <%= @repository.dds.round(3) %><br/>
-        <br/>
-        <% if @repository.past_year_issueters %>
-        issues in the past year: <%= number_with_delimiter @repository.past_year_total_issues %><br>
-        issueters in the past year: <%= number_with_delimiter @repository.past_year_total_issueters %><br>
-        Avg issues per issueter in the past year: <%= number_with_delimiter @repository.past_year_mean_issues.round(3) %><br>
-        Development Distribution Score (<a href='https://report.opensustain.tech/chapters/development-distribution-score.html' target="_blank">DDS</a>) in the past year: <%= @repository.past_year_dds.round(3) %><br/>
-        <br/>
-        <% end %>
+        Total issues: <%= number_with_delimiter @repository.issues_count %><br>
+        Total pull Requests: <%= number_with_delimiter @repository.pull_requests_count %><br><br>
+        Average time to close issues: <%= distance_of_time_in_words @repository.avg_time_to_close_issue %><br>
+        Average time to close pull requests: <%= distance_of_time_in_words @repository.avg_time_to_close_pull_request %><br><br>
+        Total issue authors: <%= number_with_delimiter @repository.issue_authors_count %><br>
+        Total pull request authors: <%= number_with_delimiter @repository.pull_request_authors_count %><br><br>
+        Average comments per issue: <%= number_with_delimiter @repository.avg_comments_per_issue.round(2) %><br>
+        Average comments per pull request: <%= number_with_delimiter @repository.avg_comments_per_pull_request.round(2) %><br><br>
+
+        Bot issues: <%= number_with_delimiter @repository.bot_issues_count %><br>
+        Bot pull requests: <%= number_with_delimiter @repository.bot_pull_requests_count %><br><br>
+
         More repo stats: <%= link_to @repository.repos_url, @repository.repos_url, target: :_blank %><br>
         JSON API: <%= link_to api_v1_host_repository_url(@host, @repository), api_v1_host_repository_url(@host, @repository), target: :_blank %>
       </p>
-      
-      <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-tab-pane" type="button" role="tab" aria-controls="all-tab-pane" aria-selected="true">All issueters</button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link" id="past-year-tab" data-bs-toggle="tab" data-bs-target="#past-year-tab-pane" type="button" role="tab" aria-controls="past-year-tab-pane" aria-selected="false">issueters in the past year</button>
-        </li>
-      </ul>
-      <div class="tab-content">
-        <div class="tab-pane show active" id="all-tab-pane" role="tabpanel" aria-labelledby="all-tab" tabindex="0">
-          <table class='table'>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>issues</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @repository.issueters.each do |issueter| %>
-                <tr>
-                  <td><%= issueter['name'] %></td>
-                  <td><%= obfusticate_email(issueter['email']) %></td>
-                  <td><%= issueter['count'] %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-          <p>
-            <small class='text-muted'>
-              <i>
-                Excludes empty and merge issues.
-              </i>
-            </small>
-          </p>
+      <hr>
+      <div class='row'>
+        <div class='col-md-4'>
+          <h4>Issue Author Associations</h4>
+          <ul>
+            <% @repository.issues.where(pull_request: false).group(:author_association).count.sort_by{|k,v| -v }.each do |author, count| %>
+              <li>
+                <%= author.humanize %>
+                (<%= number_with_delimiter count %>, <%= number_to_percentage count.to_f / @repository.issues_count * 100, precision: 2 %>)
+              </li>
+            <% end %>
+          </ul>
         </div>
-        <div class="tab-pane" id="past-year-tab-pane" role="tabpanel" aria-labelledby="past-year-tab" tabindex="0">
-          <% if @repository.past_year_issueters && @repository.past_year_issueters.any? %>
-            <table class='table'>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>issues</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% @repository.past_year_issueters.each do |issueter| %>
-                  <tr>
-                    <td><%= issueter['name'] %></td>
-                    <td><%= obfusticate_email(issueter['email']) %></td>
-                    <td><%= issueter['count'] %></td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-            <p>
-              <small class='text-muted'>
-                <i>
-                  issueters in the past year are calculated by looking at the last 365 days of issues. Excludes empty and merge issues.
-                </i>
-              </small>
-            </p>
-          <% elsif @repository.past_year_issueters %>
-            <p class="mt-2 text-muted"><i><small>
-                This repository has not had any issues in the past year. Excludes empty and merge issues.
-              </small></i></p>
-          <% else %>
-            <p class="mt-2 text-muted"><i><small>
-              This repository has not had the past years issues calculated yet. This may take a few minutes.
-            </small></i></p>
-          <% end %>
+        <div class='col-md-4'>
+          <h4>Pull Request Author Associations</h4>
+          <ul>
+            <% @repository.issues.where(pull_request: true).group(:author_association).count.sort_by{|k,v| -v }.each do |author, count| %>
+              <li>
+                <%= author.humanize %>
+                (<%= number_with_delimiter count %>, <%= number_to_percentage count.to_f / @repository.pull_requests_count * 100, precision: 2 %>)
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+      <hr>
+      <div class='row'>
+        <div class='col-md-4'>
+          <h4>Top Issue Authors</h4>
+          <ul>
+            <% @repository.issues.where(pull_request: false).group(:user).count.sort_by{|k,v| -v }.first(30).each do |author, count| %>
+              <li>
+                <%= author %>
+                (<%= number_with_delimiter count %>)
+              </li>
+            <% end %>
+          </ul>
+        </div>
+        <div class='col-md-4'>
+          <h4>Top Pull Request Authors</h4>
+          <ul>
+            <% @repository.issues.where(pull_request: true).group(:user).count.sort_by{|k,v| -v }.first(30).each do |author, count| %>
+              <li>
+                <%= author %>
+                (<%= number_with_delimiter count %>)
+              </li>
+            <% end %>
+          </ul>
         </div>
       </div>
 
 
-    
-      
+      <hr>
+      <div class='row'>
+        <div class='col-md-4'>
+          <h4>Top Issue Labels</h4>
+          <ul>
+            <% @repository.issue_labels_count.first(30).each do |label, count| %>
+              <li>
+                <%= label %>
+                (<%= number_with_delimiter count %>)
+              </li>
+            <% end %>
+          </ul>
+        </div>
+        <div class='col-md-4'>
+          <h4>Top Pull Request Labels</h4>
+          <ul>
+            <% @repository.pull_request_labels_count.first(30).each do |label, count| %>
+              <li>
+                <%= label %>
+                (<%= number_with_delimiter count %>)
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+
     <% end %>
   <% else %>
     <p class="card-subtitle mb-2 text-muted"><i><small>

@@ -42,7 +42,7 @@ class Repository < ApplicationRecord
   def sync_async(remote_ip = '0.0.0.0')
     job = Job.new(url: html_url, status: 'pending', ip: remote_ip)
     if job.save
-      job.parse_commits_async
+      job.sync_issues_async
     end
   end
 
@@ -78,6 +78,22 @@ class Repository < ApplicationRecord
     "#{host.url}/#{full_name}"
   end
 
+  def issue_labels_count
+    issues.where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| v}.reverse
+  end
+
+  def pull_request_labels_count
+    issues.where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| v}.reverse
+  end
+
+  def bot_issues_count
+    issues.where(pull_request: false).where('issues.user ILIKE ?', '%[bot]').count
+  end
+
+  def bot_pull_requests_count
+    issues.where(pull_request: true).where('issues.user ILIKE ?', '%[bot]').count
+  end
+
   # TODO sync issues
   def sync_issues
     remote_issues = host.host_instance.load_issues(self)
@@ -103,10 +119,6 @@ class Repository < ApplicationRecord
     self.pull_request_authors_count = issues.where(pull_request: true).distinct.count(:user)
     # number of unique issue authors
     self.issue_authors_count = issues.where(pull_request: false).distinct.count(:user)
-    # number of unique issue closers
-    self.issue_closers_count = issues.where(pull_request: false).distinct.count(:closed_by)
-    # number of unique pull request closers
-    self.pull_request_closers_count = issues.where(pull_request: true).distinct.count(:closed_by)
     # avg number of comments per issue
     self.avg_comments_per_issue = issues.where(pull_request: false).average(:comments_count)
     # avg number of comments per pull request

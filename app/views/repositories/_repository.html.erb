@@ -12,6 +12,7 @@
         <%# todo description %>
         <p class="card-subtitle mb-2 text-muted"><i><small>
           Total issues: <%= number_with_delimiter repository.issues_count %><br/>
+          Total pull requests: <%= number_with_delimiter repository.pull_requests_count %><br/>
           <% if repository.last_synced_at %>
               Last synced: <%= distance_of_time_in_words_to_now repository.last_synced_at %> ago
           <% end %>
