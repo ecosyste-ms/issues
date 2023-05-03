@@ -5,10 +5,18 @@ class Host < ApplicationRecord
   validates :url, presence: true
   validates :kind, presence: true
 
-  scope :visible, -> { where('repositories_count > 0 AND commits_count > 0') }
+  scope :visible, -> { where('repositories_count > 0') }
 
   def self.find_by_domain(domain)
     Host.all.find { |host| host.domain == domain }
+  end
+
+  def host_class
+    "Hosts::#{kind.capitalize}".constantize
+  end
+
+  def host_instance
+    host_class.new(self)
   end
 
   def to_s
@@ -34,7 +42,7 @@ class Host < ApplicationRecord
     
     job = Job.new(url: repo.html_url, status: 'pending', ip: remote_ip)
     if job.save
-      job.parse_commits_async
+      job.sync_issues_async
     end
     job
   end
@@ -62,8 +70,6 @@ class Host < ApplicationRecord
 
   def update_counts
     self.repositories_count = repositories.visible.count
-    self.commits_count = repositories.visible.sum(:total_commits)
-    self.contributors_count = repositories.visible.sum(:total_committers)
     save
   end
 

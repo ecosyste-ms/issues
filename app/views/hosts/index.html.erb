@@ -16,8 +16,7 @@
 
 <div class="container-sm">
   <h2 class='mb-3'>
-    Repositories indexed: <%= number_with_delimiter @hosts.sum(&:repositories_count) %> -
-    issues counted: <%= number_with_delimiter @hosts.sum(&:issues_count) %>
+    Repositories indexed: <%= number_with_delimiter @hosts.sum(&:repositories_count) %>
   </h2>
 
   <%= render @hosts %>

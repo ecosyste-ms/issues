@@ -1,6 +1,6 @@
 class HostsController < ApplicationController
   def index
-    @hosts = Host.all.visible.order('repositories_count DESC, issues_count DESC')
+    @hosts = Host.all.visible.order('repositories_count DESC')
 
     @scope = Repository.visible.order('last_synced_at DESC').includes(:host)
     @pagy, @repositories = pagy_countless(@scope, items: 10)
