@@ -87,11 +87,11 @@ class Repository < ApplicationRecord
   end
 
   def issue_author_associations_count
-    issues.where(pull_request: false).group(:author_association).count.sort_by{|k,v| -v }
+    issues.where(pull_request: false).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
   end
 
   def pull_request_author_associations_count
-    issues.where(pull_request: true).group(:author_association).count.sort_by{|k,v| -v }
+    issues.where(pull_request: true).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
   end
 
   def issue_authors

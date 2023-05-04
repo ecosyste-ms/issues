@@ -35,6 +35,7 @@ gem 'appsignal'
 gem "groupdate"
 gem 'google-protobuf', '3.22.0'
 gem 'octokit'
+gem "gitlab"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]

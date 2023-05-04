@@ -45,6 +45,7 @@
       More repo stats: <%= link_to @repository.repos_url, @repository.repos_url, target: :_blank %><br>
       JSON API: <%= link_to api_v1_host_repository_url(@host, @repository), api_v1_host_repository_url(@host, @repository), target: :_blank %>
       <hr>
+      <% if @repository.issue_author_associations_count.any? || @repository.pull_request_author_associations_count.any? %>
       <div class='row'>
         <div class='col-md-4'>
           <h4>Issue Author Associations</h4>
@@ -70,6 +71,7 @@
         </div>
       </div>
       <hr>
+      <% end %>
       <div class='row'>
         <div class='col-md-4'>
           <h4>Top Issue Authors</h4>
