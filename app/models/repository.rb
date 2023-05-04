@@ -114,25 +114,30 @@ class Repository < ApplicationRecord
     self.issues_count = issues.where(pull_request: false).count
     self.pull_requests_count = issues.where(pull_request: true).count
 
-    # avg time to close issue
     self.avg_time_to_close_issue = issues.where(pull_request: false).average(:time_to_close)
-    # avg time to close pull request
     self.avg_time_to_close_pull_request = issues.where(pull_request: true).average(:time_to_close)
-    # number of issues closed
     self.issues_closed_count = issues.where(pull_request: false, state: 'closed').count
-    # number of pull requests closed
     self.pull_requests_closed_count = issues.where(pull_request: true, state: 'closed').count
-    # number of unqiue pull request authors
     self.pull_request_authors_count = issues.where(pull_request: true).distinct.count(:user)
-    # number of unique issue authors
     self.issue_authors_count = issues.where(pull_request: false).distinct.count(:user)
-    # avg number of comments per issue
     self.avg_comments_per_issue = issues.where(pull_request: false).average(:comments_count)
-    # avg number of comments per pull request
     self.avg_comments_per_pull_request = issues.where(pull_request: true).average(:comments_count)
+    self.bot_issues_count = issues.where(pull_request: false).bot.count
+    self.bot_pull_requests_count = issues.where(pull_request: true).bot.count
 
-    self.bot_issues_count = issues.where(pull_request: false).where('issues.user ILIKE ?', '%[bot]').count
-    self.bot_pull_requests_count = issues.where(pull_request: true).where('issues.user ILIKE ?', '%[bot]').count
+    self.past_year_issues_count = issues.where(pull_request: false).past_year.count
+    self.past_year_pull_requests_count = issues.where(pull_request: true).past_year.count
+
+    self.past_year_avg_time_to_close_issue = issues.where(pull_request: false).past_year.average(:time_to_close)
+    self.past_year_avg_time_to_close_pull_request = issues.where(pull_request: true).past_year.average(:time_to_close)
+    self.past_year_issues_closed_count = issues.where(pull_request: false, state: 'closed').past_year.count
+    self.past_year_pull_requests_closed_count = issues.where(pull_request: true, state: 'closed').past_year.count
+    self.past_year_pull_request_authors_count = issues.where(pull_request: true).past_year.distinct.count(:user)
+    self.past_year_issue_authors_count = issues.where(pull_request: false).past_year.distinct.count(:user)
+    self.past_year_avg_comments_per_issue = issues.where(pull_request: false).past_year.average(:comments_count)
+    self.past_year_avg_comments_per_pull_request = issues.where(pull_request: true).past_year.average(:comments_count)
+    self.past_year_bot_issues_count = issues.where(pull_request: false).past_year.bot.count
+    self.past_year_bot_pull_requests_count = issues.where(pull_request: true).past_year.bot.count
 
     self.last_synced_at = Time.now
     self.save

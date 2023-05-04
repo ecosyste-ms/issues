@@ -12,22 +12,38 @@
         Last synced: <%= distance_of_time_in_words_to_now @repository.last_synced_at %> ago
     </small></i></p>
     <% if @repository.issues_count %>
-      <p>
-        Total issues: <%= number_with_delimiter @repository.issues_count %><br>
-        Total pull requests: <%= number_with_delimiter @repository.pull_requests_count %><br><br>
-        Average time to close issues: <%= distance_of_time_in_words @repository.avg_time_to_close_issue %><br>
-        Average time to close pull requests: <%= distance_of_time_in_words @repository.avg_time_to_close_pull_request %><br><br>
-        Total issue authors: <%= number_with_delimiter @repository.issue_authors_count %><br>
-        Total pull request authors: <%= number_with_delimiter @repository.pull_request_authors_count %><br><br>
-        Average comments per issue: <%= number_with_delimiter @repository.avg_comments_per_issue.round(2) %><br>
-        Average comments per pull request: <%= number_with_delimiter @repository.avg_comments_per_pull_request.round(2) %><br><br>
+      <div class='row'>
+        <div class='col-md-6'>
+          <p>
+            Total issues: <%= number_with_delimiter @repository.issues_count %><br>
+            Total pull requests: <%= number_with_delimiter @repository.pull_requests_count %><br>
+            Average time to close issues: <%= distance_of_time_in_words_if_present @repository.avg_time_to_close_issue %><br>
+            Average time to close pull requests: <%= distance_of_time_in_words_if_present @repository.avg_time_to_close_pull_request %><br>
+            Total issue authors: <%= number_with_delimiter @repository.issue_authors_count %><br>
+            Total pull request authors: <%= number_with_delimiter @repository.pull_request_authors_count %><br>
+            Average comments per issue: <%= rounded_number_with_delimiter @repository.avg_comments_per_issue %><br>
+            Average comments per pull request: <%= rounded_number_with_delimiter @repository.avg_comments_per_pull_request %><br>
 
-        Bot issues: <%= number_with_delimiter @repository.bot_issues_count %><br>
-        Bot pull requests: <%= number_with_delimiter @repository.bot_pull_requests_count %><br><br>
-
-        More repo stats: <%= link_to @repository.repos_url, @repository.repos_url, target: :_blank %><br>
-        JSON API: <%= link_to api_v1_host_repository_url(@host, @repository), api_v1_host_repository_url(@host, @repository), target: :_blank %>
-      </p>
+            Bot issues: <%= number_with_delimiter @repository.bot_issues_count %><br>
+            Bot pull requests: <%= number_with_delimiter @repository.bot_pull_requests_count %>
+          </p>
+        </div>
+        <div class='col-md-6'>
+          <p>
+            Past year issues: <%= number_with_delimiter @repository.past_year_issues_count %><br>
+            Past year pull requests: <%= number_with_delimiter @repository.past_year_pull_requests_count %><br>
+            Past year average time to close issues: <%= distance_of_time_in_words_if_present @repository.past_year_avg_time_to_close_issue %><br>
+            Past year average time to close pull requests: <%= distance_of_time_in_words_if_present @repository.past_year_avg_time_to_close_pull_request %><br>
+            Past year issue authors: <%= number_with_delimiter @repository.past_year_issue_authors_count %><br>
+            Past year pull request authors: <%= number_with_delimiter @repository.past_year_pull_request_authors_count %><br>
+            Past year average comments per issue: <%= rounded_number_with_delimiter @repository.past_year_avg_comments_per_issue %><br>
+            Past year average comments per pull request: <%= rounded_number_with_delimiter @repository.past_year_avg_comments_per_pull_request %><br>
+            Past year bot issues: <%= number_with_delimiter @repository.past_year_bot_issues_count %><br>
+            Past year bot pull requests: <%= number_with_delimiter @repository.past_year_bot_pull_requests_count %>
+        </div>
+      </div>
+      More repo stats: <%= link_to @repository.repos_url, @repository.repos_url, target: :_blank %><br>
+      JSON API: <%= link_to api_v1_host_repository_url(@host, @repository), api_v1_host_repository_url(@host, @repository), target: :_blank %>
       <hr>
       <div class='row'>
         <div class='col-md-4'>

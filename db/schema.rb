@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_05_03_165708) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_04_111453) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
@@ -83,6 +84,20 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_03_165708) do
     t.float "avg_comments_per_pull_request"
     t.integer "bot_issues_count"
     t.integer "bot_pull_requests_count"
+    t.integer "past_year_issues_count"
+    t.integer "past_year_pull_requests_count"
+    t.float "past_year_avg_time_to_close_issue"
+    t.float "past_year_avg_time_to_close_pull_request"
+    t.integer "past_year_issues_closed_count"
+    t.integer "past_year_pull_requests_closed_count"
+    t.integer "past_year_pull_request_authors_count"
+    t.integer "past_year_issue_authors_count"
+    t.integer "past_year_issue_closers_count"
+    t.integer "past_year_pull_request_closers_count"
+    t.float "past_year_avg_comments_per_issue"
+    t.float "past_year_avg_comments_per_pull_request"
+    t.integer "past_year_bot_issues_count"
+    t.integer "past_year_bot_pull_requests_count"
     t.index "host_id, lower((full_name)::text)", name: "index_repositories_on_host_id_lower_full_name", unique: true
   end
 

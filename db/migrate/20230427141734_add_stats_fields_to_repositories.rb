@@ -7,8 +7,6 @@ class AddStatsFieldsToRepositories < ActiveRecord::Migration[7.0]
     add_column :repositories, :pull_requests_closed_count, :integer
     add_column :repositories, :pull_request_authors_count, :integer
     add_column :repositories, :issue_authors_count, :integer
-    add_column :repositories, :issue_closers_count, :integer
-    add_column :repositories, :pull_request_closers_count, :integer
     add_column :repositories, :avg_comments_per_issue, :float
     add_column :repositories, :avg_comments_per_pull_request, :float
   end
