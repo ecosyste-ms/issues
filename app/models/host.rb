@@ -70,6 +70,8 @@ class Host < ApplicationRecord
 
   def update_counts
     self.repositories_count = repositories.visible.count
+    self.issues_count = repositories.visible.sum(:issues_count)
+    self.pull_requests_count = repositories.visible.sum(:pull_requests_count)
     save
   end
 

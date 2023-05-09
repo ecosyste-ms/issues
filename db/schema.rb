@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_05_09_094715) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_09_134000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -25,6 +25,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_09_094715) do
     t.string "icon_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "issues_count"
+    t.integer "pull_requests_count"
   end
 
   create_table "issues", force: :cascade do |t|
