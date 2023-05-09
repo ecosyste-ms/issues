@@ -8,3 +8,13 @@ json.pull_request_author_associations_count @repository.pull_request_author_asso
 json.issue_authors @repository.issue_authors.to_h
 json.pull_request_authors @repository.pull_request_authors.to_h
 json.host @repository.host, partial: 'api/v1/hosts/host', as: :host
+
+json.past_year_issue_labels_count @repository.past_year_issue_labels_count.to_h
+json.past_year_pull_request_labels_count @repository.past_year_pull_request_labels_count.to_h
+
+json.past_year_issue_author_associations_count @repository.past_year_issue_author_associations_count.to_h
+json.past_year_pull_request_author_associations_count @repository.past_year_pull_request_author_associations_count.to_h
+
+json.past_year_issue_authors @repository.past_year_issue_authors.to_h
+json.past_year_pull_request_authors @repository.past_year_pull_request_authors.to_h
+json.host @repository.host, partial: 'api/v1/hosts/host', as: :host

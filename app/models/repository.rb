@@ -86,12 +86,28 @@ class Repository < ApplicationRecord
     issues.where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
   end
 
+  def past_year_issue_labels_count
+    issues.where(pull_request: false).past_year.pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+  end
+
+  def past_year_pull_request_labels_count
+    issues.where(pull_request: true).past_year.pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+  end
+
   def issue_author_associations_count
     issues.where(pull_request: false).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
   end
 
   def pull_request_author_associations_count
     issues.where(pull_request: true).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
+  end
+
+  def past_year_issue_author_associations_count
+    issues.where(pull_request: false).past_year.with_author_association.group(:author_association).count.sort_by{|k,v| -v }
+  end
+
+  def past_year_pull_request_author_associations_count
+    issues.where(pull_request: true).past_year.with_author_association.group(:author_association).count.sort_by{|k,v| -v }
   end
 
   def issue_authors
@@ -101,6 +117,15 @@ class Repository < ApplicationRecord
   def pull_request_authors
     issues.where(pull_request: true).group(:user).count.sort_by{|k,v| -v }
   end
+
+  def past_year_issue_authors
+    issues.where(pull_request: false).past_year.group(:user).count.sort_by{|k,v| -v }
+  end
+
+  def past_year_pull_request_authors
+    issues.where(pull_request: true).past_year.group(:user).count.sort_by{|k,v| -v }
+  end
+
 
   def sync_issues
     remote_issues = host.host_instance.load_issues(self)
