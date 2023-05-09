@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_05_04_111453) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_09_094715) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -48,6 +48,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_04_111453) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "time_to_close"
+    t.datetime "merged_at"
     t.index ["repository_id"], name: "index_issues_on_repository_id"
   end
 
@@ -98,6 +99,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_04_111453) do
     t.float "past_year_avg_comments_per_pull_request"
     t.integer "past_year_bot_issues_count"
     t.integer "past_year_bot_pull_requests_count"
+    t.integer "merged_pull_requests_count"
+    t.integer "past_year_merged_pull_requests_count"
     t.index "host_id, lower((full_name)::text)", name: "index_repositories_on_host_id_lower_full_name", unique: true
   end
 

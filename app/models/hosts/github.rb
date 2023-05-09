@@ -83,7 +83,8 @@ module Hosts
           assignees: issue.assignees.map(&:login),
           pull_request: issue.pull_request.present?,
           author_association: issue.author_association,
-          state_reason: issue.state_reason
+          state_reason: issue.state_reason,
+          merged_at: issue.pull_request.present? ? issue.pull_request.merged_at : nil,
         }
       end
     end

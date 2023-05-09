@@ -23,6 +23,7 @@
             Total pull request authors: <%= number_with_delimiter @repository.pull_request_authors_count %><br>
             Average comments per issue: <%= rounded_number_with_delimiter @repository.avg_comments_per_issue %><br>
             Average comments per pull request: <%= rounded_number_with_delimiter @repository.avg_comments_per_pull_request %><br>
+            Merged pull request: <%= rounded_number_with_delimiter @repository.merged_pull_requests_count %><br>
 
             Bot issues: <%= number_with_delimiter @repository.bot_issues_count %><br>
             Bot pull requests: <%= number_with_delimiter @repository.bot_pull_requests_count %>
@@ -38,6 +39,7 @@
             Past year pull request authors: <%= number_with_delimiter @repository.past_year_pull_request_authors_count %><br>
             Past year average comments per issue: <%= rounded_number_with_delimiter @repository.past_year_avg_comments_per_issue %><br>
             Past year average comments per pull request: <%= rounded_number_with_delimiter @repository.past_year_avg_comments_per_pull_request %><br>
+            Past year merged pull request: <%= rounded_number_with_delimiter @repository.past_year_merged_pull_requests_count %><br>
             Past year bot issues: <%= number_with_delimiter @repository.past_year_bot_issues_count %><br>
             Past year bot pull requests: <%= number_with_delimiter @repository.past_year_bot_pull_requests_count %>
         </div>
