@@ -45,7 +45,7 @@ class Job < ApplicationRecord
   end
 
   def sync_issues
-    # find repo from repos service
+    # TODO don't depend on the repos service being up
     conn = Faraday.new('https://repos.ecosyste.ms') do |f|
       f.request :json
       f.request :retry
