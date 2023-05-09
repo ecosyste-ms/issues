@@ -11,7 +11,7 @@ module Hosts
     end
 
     def load_issues(repository)
-      options = {state: 'all', order_by: 'updated_at', sort: 'desc'}
+      options = {state: 'all', order_by: 'updated_at', sort: 'desc', per_page: 100}
       options[:updated_after] = repository.last_synced_at if repository.last_synced_at.present?
       
       issues = api_client.issues(repository.full_name, options)
@@ -33,11 +33,11 @@ module Hosts
         }
       end
 
-      mapped_issues += load_merge_requests(repository)
+      yield  (mapped_issues += load_merge_requests(repository))
     end
 
     def load_merge_requests(repository)
-      options = {state: 'all', order_by: 'updated_at', sort: 'desc'}
+      options = {state: 'all', order_by: 'updated_at', sort: 'desc', per_page: 100}
       options[:updated_after] = repository.last_synced_at if repository.last_synced_at.present?
 
       merge_requests = api_client.merge_requests(repository.full_name, options)
