@@ -128,12 +128,13 @@ class Repository < ApplicationRecord
 
 
   def sync_issues
-    remote_issues = host.host_instance.load_issues(self)
-    remote_issues.each do |issue|
-      i = issues.find_or_create_by(uuid: issue[:uuid])
-      i.assign_attributes issue
-      i.time_to_close = i.closed_at - i.created_at if i.closed_at.present?
-      i.save
+    host.host_instance.load_issues(self) do |data|
+      data.each do |issue|
+        i = issues.find_or_create_by(uuid: issue[:uuid])
+        i.assign_attributes issue
+        i.time_to_close = i.closed_at - i.created_at if i.closed_at.present?
+        i.save
+      end
     end
 
     self.issues_count = issues.where(pull_request: false).count

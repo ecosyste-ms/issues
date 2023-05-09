@@ -61,11 +61,26 @@ module Hosts
     end
 
     def load_issues(repository)
-      options = {state: 'all', sort: 'updated', direction: 'desc'}
-      options[:since] = repository.last_synced_at if repository.last_synced_at.present?
+      url = "#{api_client.api_endpoint}repos/#{repository.full_name}/issues?state=all&sort=updated&direction=desc&per_page=100"
+      url = "#{url}&since=#{repository.last_synced_at}" if repository.last_synced_at.present?
+
+      response = api_client.agent.call(:get, url, nil, {})
       
-      issues = api_client.issues(repository.full_name, options)
-      issues.map do |issue|
+      mapped_issues = map_issues(response.data)
+
+      yield(mapped_issues)
+
+      while response && response.rels[:next]
+        response = response.rels[:next].get
+
+        map_issues(response.data)
+
+        yield(mapped_issues)
+      end 
+    end
+
+    def map_issues(data)
+      data.map do |issue|
         {
           uuid: issue.id,
           node_id: issue.node_id,
@@ -86,33 +101,6 @@ module Hosts
           merged_at: issue.pull_request.present? ? issue.pull_request.merged_at : nil,
         }
       end
-    end
-
-    def events_for_repo(full_name, event_type: nil, per_page: 100)
-      url = "https://timeline.ecosyste.ms/api/v1/events/#{full_name}?per_page=#{per_page}"
-      url = "#{url}&event_type=#{event_type}" if event_type.present?
-
-      begin
-        resp = Faraday.get(url) do |req|
-          req.options.timeout = 5
-        end
-
-        if resp.success?
-          Oj.load(resp.body)
-        else
-          {}
-        end
-      rescue Faraday::Error
-        {}
-      end
-    end
-
-    def attempt_load_from_timeline(full_name)
-      events = events_for_repo(full_name, event_type: 'PullRequestEvent', per_page: 1)
-      return nil if events.blank?
-      events.first['payload']['pull_request']['base']['repo'].to_hash.with_indifferent_access
-    rescue
-      nil
     end
 
     private
