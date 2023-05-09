@@ -13,7 +13,7 @@ module Hosts
     def load_issues(repository)
       options = {state: 'all', order_by: 'updated_at', sort: 'desc', per_page: 100}
       options[:updated_after] = repository.last_synced_at if repository.last_synced_at.present?
-      
+      # TODO pagination
       issues = api_client.issues(repository.full_name, options)
       mapped_issues = issues.map do |issue|
         {
@@ -39,7 +39,7 @@ module Hosts
     def load_merge_requests(repository)
       options = {state: 'all', order_by: 'updated_at', sort: 'desc', per_page: 100}
       options[:updated_after] = repository.last_synced_at if repository.last_synced_at.present?
-
+      # TODO pagination
       merge_requests = api_client.merge_requests(repository.full_name, options)
       merge_requests.map do |merge_request|
         {

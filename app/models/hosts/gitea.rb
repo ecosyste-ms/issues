@@ -15,7 +15,7 @@ module Hosts
     def load_issues(repository)
       options = {state: 'all', order_by: 'updated_at', sort: 'desc', per_page: 100}
       options[:updated_after] = repository.last_synced_at if repository.last_synced_at.present?
-      
+      # TODO pagination
       resp = api_client.get("/api/v1/repos/#{repository.full_name}/issues", options)
       return unless resp.success?
       issues = resp.body
