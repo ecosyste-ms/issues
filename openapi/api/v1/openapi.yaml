@@ -185,6 +185,10 @@ components:
           type: string
         repositories_count:
           type: integer
+        issues_count:
+          type: integer
+        pull_requests_count:
+          type: integer
         last_synced_at:
           type: string
           format: date-time
@@ -195,11 +199,65 @@ components:
       properties:
         full_name:
           type: string
-        default_branch:
+        html_url:
           type: string
         last_synced_at:
           type: string
           format: date-time
+        status:
+          type: string
+        issues_count:
+          type: integer
+        pull_requests_count:
+          type: integer
+        avg_time_to_close_issue:
+          type: float
+        avg_time_to_close_pull_request:
+          type: float
+        issues_closed_count:
+          type: integer
+        pull_requests_closed_count:
+          type: integer
+        pull_request_authors_count:
+          type: integer
+        issue_authors_count:
+          type: integer
+        avg_comments_per_issue:
+          type: float
+        avg_comments_per_pull_request:
+          type: float
+        merged_pull_requests_count:
+          type: integer
+        bot_issues_count:
+          type: integer
+        bot_pull_requests_count:
+          type: integer
+        past_year_issues_count:
+          type: integer
+        past_year_pull_requests_count:
+          type: integer
+        past_year_avg_time_to_close_issue:
+          type: float
+        past_year_avg_time_to_close_pull_request:
+          type: float
+        past_year_issues_closed_count:
+          type: integer
+        past_year_pull_requests_closed_count:
+          type: integer
+        past_year_pull_request_authors_count:
+          type: integer
+        past_year_issue_authors_count:
+          type: integer
+        past_year_avg_comments_per_issue:
+          type: float
+        past_year_avg_comments_per_pull_request:
+          type: float
+        past_year_merged_pull_requests_count:
+          type: integer
+        past_year_bot_issues_count:
+          type: integer
+        past_year_bot_pull_requests_count:
+          type: integer
         updated_at:
           type: string
           format: date-time
