@@ -19,7 +19,7 @@ module Hosts
       resp = api_client.get("/api/v1/repos/#{repository.full_name}/issues", options)
       return unless resp.success?
       issues = resp.body
-      yield issues.map do |issue|
+      mapped_issues = issues.map do |issue|
         {
           uuid: issue['id'],
           number: issue['number'],
@@ -36,6 +36,7 @@ module Hosts
           pull_request: issue['pull_request'].present?
         }
       end
+      yield mapped_issues
     end
 
     def api_client
