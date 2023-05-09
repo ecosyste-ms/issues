@@ -30,8 +30,7 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
       redirect_to api_v1_host_repository_path(@host, @repository)
     else
       @host.sync_repository_async(path, request.remote_ip) if path.present?
-      redirect_to api_v1_host_repository_path(@host, @repository)
-      render json: { error: 'Repository not found' }, status: :not_found
+      redirect_to api_v1_host_repository_path(@host, path)
     end
   end
 
