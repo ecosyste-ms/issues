@@ -77,7 +77,6 @@ module Hosts
           created_at: issue.created_at,
           updated_at: issue.updated_at,
           closed_at: issue.closed_at,
-          body: issue.body,
           user: issue.user.login,
           labels: issue.labels.map(&:name),
           assignees: issue.assignees.map(&:login),
