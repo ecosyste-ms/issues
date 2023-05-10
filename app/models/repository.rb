@@ -133,6 +133,7 @@ class Repository < ApplicationRecord
         i = issues.find_or_create_by(uuid: issue[:uuid])
         i.assign_attributes issue
         i.time_to_close = i.closed_at - i.created_at if i.closed_at.present?
+        i.host_id = host.id
         i.save
       end
     end
