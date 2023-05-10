@@ -61,6 +61,9 @@ module Hosts
         yield mapped_merge_requests
         merge_requests = merge_requests.next_page
       end
+
+    rescue IGNORABLE_EXCEPTIONS
+      # merge requests may not be not enabled
     end
 
     def api_client
