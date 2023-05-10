@@ -151,7 +151,7 @@ class Repository < ApplicationRecord
     self.avg_comments_per_pull_request = issues.where(pull_request: true).average(:comments_count)
     self.bot_issues_count = issues.where(pull_request: false).bot.count
     self.bot_pull_requests_count = issues.where(pull_request: true).bot.count
-    self.merged_pull_requests_count = issues.where(pull_request: true).where.not(merged_at: nil).count
+    self.merged_pull_requests_count = issues.where(pull_request: true).merged.count
 
     self.past_year_issues_count = issues.where(pull_request: false).past_year.count
     self.past_year_pull_requests_count = issues.where(pull_request: true).past_year.count
@@ -166,7 +166,7 @@ class Repository < ApplicationRecord
     self.past_year_avg_comments_per_pull_request = issues.where(pull_request: true).past_year.average(:comments_count)
     self.past_year_bot_issues_count = issues.where(pull_request: false).past_year.bot.count
     self.past_year_bot_pull_requests_count = issues.where(pull_request: true).past_year.bot.count
-    self.past_year_merged_pull_requests_count = issues.where(pull_request: true).past_year.where.not(merged_at: nil).count
+    self.past_year_merged_pull_requests_count = issues.where(pull_request: true).past_year.merged.count
 
     self.last_synced_at = Time.now
     self.save

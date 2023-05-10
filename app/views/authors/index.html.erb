@@ -1,4 +1,4 @@
-<% @meta_title = @host.to_s %>
+<% @meta_title = "#{@host.to_s} Authors" %>
 
 <div class="container-sm">
   <h1 class='mb-4'>
@@ -7,7 +7,7 @@
 
   <ul class="nav nav-tabs my-3">
     <li class="nav-item">
-      <a class="nav-link active" aria-current="page">
+      <a class="nav-link" href="<%= host_path(@host.name) %>">
         Repositories
         <span class="badge bg-secondary rounded-pill">
           <%= number_with_delimiter @host.repositories_count %>
@@ -15,16 +15,16 @@
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" href="<%= host_authors_path(@host) %>">
+      <a class="nav-link active" aria-current="page">
         Authors
         <span class="badge bg-secondary rounded-pill">
-          <%= number_with_delimiter @host.authors_count %>
+          <%= number_with_delimiter @scope.length %>
         </span>
       </a>
     </li>
-    <%= render 'sort' %>
+    
   </ul>
 
-  <%= render @repositories %>
+  <%= render collection: @authors, partial: 'authors/author' %>
   <%== pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>  
 </div>

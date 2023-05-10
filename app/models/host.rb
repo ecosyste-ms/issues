@@ -1,5 +1,6 @@
 class Host < ApplicationRecord
   has_many :repositories
+  has_many :issues
 
   validates :name, presence: true, uniqueness: true
   validates :url, presence: true
@@ -72,6 +73,7 @@ class Host < ApplicationRecord
     self.repositories_count = repositories.visible.count
     self.issues_count = repositories.visible.sum(:issues_count)
     self.pull_requests_count = repositories.visible.sum(:pull_requests_count)
+    self.authors_count = issues.distinct.count(:user)
     save
   end
 

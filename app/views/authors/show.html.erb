@@ -1,0 +1,96 @@
+<% @meta_title = "#{@author} issue stats | #{@host}" %>
+
+<div class="container-sm">
+  <h1>
+    <%= link_to @host, host_path(@host) %> /
+      
+    <%= link_to @author, "#{@host.url}/#{@author}", target: :_blank %> issue stats
+  </h1>
+
+  <p>
+    Total issues: <%= number_with_delimiter @issues_count %><br>
+    Total pull requests: <%= number_with_delimiter @pull_requests_count %><br>
+    Merged pull request: <%= number_with_delimiter @merged_pull_requests_count %><br>
+    Average time to close issues: <%= distance_of_time_in_words_if_present @average_issue_close_time %><br>
+    Average time to close pull requests: <%= distance_of_time_in_words_if_present @average_pull_request_close_time %><br>
+    Average comments per issue: <%= rounded_number_with_delimiter @average_issue_comments_count %><br>
+    Average comments per pull request: <%= rounded_number_with_delimiter @average_pull_request_comments_count %><br>
+  </p>
+
+  <div class='row'>
+    <div class='col-md-4'>
+      <h4>Issues created</h4>
+      <ul>
+        <% @issue_repos.each do |full_name, count| %>
+          <li>
+            <%= link_to full_name, host_repository_path(@host.name, full_name) %>:
+            <%= number_with_delimiter count %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    <div class='col-md-4'>
+      <h4>Pull requests created</h4>
+      <ul>
+        <% @pull_request_repos.each do |full_name, count| %>
+          <li>
+            <%= link_to full_name, host_repository_path(@host.name, full_name) %>:
+            <%= number_with_delimiter count %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class='row'>
+    <div class='col-md-4'>
+      <h4>Issue Author Associations</h4>
+      <ul>
+        <% @issue_author_associations_count.each do |role, count| %>
+          <li>
+            <%= role.humanize %>
+            (<%= number_with_delimiter count %>, <%= number_to_percentage count.to_f / @issues_count * 100, precision: 2 %>)
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    <div class='col-md-4'>
+      <h4>Pull Request Author Associations</h4>
+      <ul>
+        <% @pull_request_author_associations_count.each do |role, count| %>
+          <li>
+            <%= role.humanize %>
+            (<%= number_with_delimiter count %>, <%= number_to_percentage count.to_f / @pull_requests_count * 100, precision: 2 %>)
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+
+  <hr>
+  <div class='row'>
+    <div class='col-md-4'>
+      <h4>Top Issue Labels</h4>
+      <ul>
+        <% @issue_labels_count.first(15).each do |label, count| %>
+          <li>
+            <%= label %>
+            (<%= number_with_delimiter count %>)
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    <div class='col-md-4'>
+      <h4>Top Pull Request Labels</h4>
+      <ul>
+        <% @pull_request_labels_count.first(15).each do |label, count| %>
+          <li>
+            <%= label %>
+            (<%= number_with_delimiter count %>)
+          </li>
+        <% end %>
+      </ul>
+    </div>
+</div>

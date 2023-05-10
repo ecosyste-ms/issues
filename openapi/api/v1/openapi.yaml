@@ -189,6 +189,8 @@ components:
           type: integer
         pull_requests_count:
           type: integer
+        authors_count:
+          type: integer
         last_synced_at:
           type: string
           format: date-time
