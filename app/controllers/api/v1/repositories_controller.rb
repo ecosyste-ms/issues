@@ -36,6 +36,6 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
 
   def show
     @host = Host.find_by_name!(params[:host_id])
-    @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
+    @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
   end
 end
