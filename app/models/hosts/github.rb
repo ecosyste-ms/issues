@@ -60,6 +60,10 @@ module Hosts
       "https://github.com/#{repository.full_name}"
     end
 
+    def issue_url(repository, issue)
+      html_url(repository) + "/#{issue.pull_request ? 'pull' : 'issues'}/#{issue.number}"
+    end
+
     def load_issues(repository)
       url = "#{api_client.api_endpoint}repos/#{repository.full_name}/issues?state=all&sort=updated&direction=desc&per_page=100"
       url = "#{url}&since=#{repository.last_synced_at}" if repository.last_synced_at.present?

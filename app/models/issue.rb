@@ -6,4 +6,8 @@ class Issue < ApplicationRecord
   scope :bot, -> { where('issues.user ILIKE ?', '%[bot]') }
   scope :with_author_association, -> { where.not(author_association: nil) }
   scope :merged, -> { where.not(merged_at: nil) }
+
+  def html_url
+    host.host_instance.issue_url(repository, self)
+  end
 end

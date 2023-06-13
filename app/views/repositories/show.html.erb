@@ -15,7 +15,7 @@
       <div class='row'>
         <div class='col-md-6'>
           <p>
-            Total issues: <%= number_with_delimiter @repository.issues_count %><br>
+            Total issues: <%= link_to number_with_delimiter(@repository.issues_count), host_repository_issues_path(@host, @repository) %><br>
             Total pull requests: <%= number_with_delimiter @repository.pull_requests_count %><br>
             Average time to close issues: <%= distance_of_time_in_words_if_present @repository.avg_time_to_close_issue %><br>
             Average time to close pull requests: <%= distance_of_time_in_words_if_present @repository.avg_time_to_close_pull_request %><br>

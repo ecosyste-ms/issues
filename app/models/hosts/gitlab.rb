@@ -10,6 +10,10 @@ module Hosts
       ::Gitlab::Error::NotFound
     end
 
+    def issue_url(repository, issue)
+      "#{repository.host.url}/#{repository.full_name}/-/#{issue.pull_request ? 'merge_requests' : 'issues'}/#{issue.number}"
+    end
+
     def load_issues(repository)
       options = {state: 'all', order_by: 'updated_at', sort: 'desc', per_page: 100}
       options[:updated_after] = repository.last_synced_at if repository.last_synced_at.present?

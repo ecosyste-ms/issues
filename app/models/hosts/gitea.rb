@@ -12,6 +12,10 @@ module Hosts
       'go-gitea'
     end
 
+    def issue_url(repository, issue)
+      repository.html_url + "/#{issue.pull_request ? 'pulls' : 'issues'}/#{issue.number}"
+    end
+
     def load_issues(repository)
       options = {state: 'all', order_by: 'updated_at', sort: 'desc', per_page: 100}
       options[:updated_after] = repository.last_synced_at if repository.last_synced_at.present?

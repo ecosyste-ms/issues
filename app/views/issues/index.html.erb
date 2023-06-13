@@ -1,0 +1,12 @@
+<% @meta_title = "#{@repository.full_name} issues and pull requests" %>
+
+<div class="container-sm">
+  <h1 class='mb-3'>
+    <%= link_to @host, host_path(@host) %> /
+      
+    <%= link_to @repository.full_name, host_repository_path(@host, @repository), target: :_blank %> issues and pull requests
+  </h1>
+  
+  <%= render @issues %>
+  <%== pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>  
+</div>
