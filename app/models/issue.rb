@@ -51,7 +51,7 @@ class Issue < ApplicationRecord
       old_version: match[:old_version],
       new_version: match[:new_version],
       path: match[:path],
-      ecosystem: ecosystem.first,
+      ecosystem: DEPENDABOT_ECOSYSTEMS[ecosystem.first],
     }
   end
 
