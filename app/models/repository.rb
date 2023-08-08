@@ -132,6 +132,7 @@ class Repository < ApplicationRecord
       data.each do |issue|
         i = issues.find_or_create_by(uuid: issue[:uuid])
         i.assign_attributes issue
+        i.parse_dependabot_metadata
         i.time_to_close = i.closed_at - i.created_at if i.closed_at.present?
         i.host_id = host.id
         i.save
@@ -168,6 +169,10 @@ class Repository < ApplicationRecord
     self.past_year_bot_pull_requests_count = issues.where(pull_request: true).past_year.bot.count
     self.past_year_merged_pull_requests_count = issues.where(pull_request: true).past_year.merged.count
 
+    self.last_synced_at = Time.now
+    self.save
+  rescue
+    self.status = 'error'
     self.last_synced_at = Time.now
     self.save
   end

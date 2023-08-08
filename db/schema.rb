@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_05_10_131040) do
+ActiveRecord::Schema[7.0].define(version: 2023_08_08_160334) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -52,6 +52,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_10_131040) do
     t.integer "time_to_close"
     t.datetime "merged_at"
     t.integer "host_id"
+    t.json "dependency_metadata"
     t.index ["host_id", "user"], name: "index_issues_on_host_id_and_user"
     t.index ["repository_id"], name: "index_issues_on_repository_id"
   end
