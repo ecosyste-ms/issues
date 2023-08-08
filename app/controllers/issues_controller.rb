@@ -8,7 +8,7 @@ class IssuesController < ApplicationController
 
   def dependabot
     @host = Host.find_by_name!('GitHub')
-    scope = @host.issues.dependabot.order('created_at DESC').includes(:repository)
+    scope = @host.issues.dependabot.with_dependency_metadata.order('created_at DESC').includes(:repository)
     scope = scope.ecosystem(params[:ecosystem]) if params[:ecosystem].present?
     scope = scope.package_name(params[:package_name]) if params[:package_name].present?
     @pagy, @issues = pagy(scope)
