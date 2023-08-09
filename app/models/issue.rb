@@ -32,6 +32,7 @@ class Issue < ApplicationRecord
 
   scope :dependabot, -> { where(user: DEPENDABOT_USERNAMES) }
   scope :with_dependency_metadata, -> { where('length(dependency_metadata::text) > 2') }
+  scope :without_dependency_metadata, -> { where(dependency_metadata: nil) }
   scope :package_name, ->(package_name) { dependabot.with_dependency_metadata.where("dependency_metadata->>'package_name' = ?", package_name) }
   scope :ecosystem, ->(ecosystem) { dependabot.with_dependency_metadata.where("dependency_metadata->>'ecosystem' = ?", ecosystem) }
 
