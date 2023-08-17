@@ -20,6 +20,9 @@ Rails.application.routes.draw do
       resources :hosts, constraints: { id: /.*/ }, only: [:index, :show] do
         resources :repositories, constraints: { id: /.*/ }, only: [:index, :show] do
           resources :issues, constraints: { id: /.*/ }, only: [:index]
+          member do
+            get 'ping', to: 'repositories#ping'
+          end
         end
       end
     end

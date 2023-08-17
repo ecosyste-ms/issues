@@ -40,6 +40,8 @@ class Repository < ApplicationRecord
   end
 
   def sync_async(remote_ip = '0.0.0.0')
+    return if last_synced_at && last_synced_at > 1.day.ago
+
     job = Job.new(url: html_url, status: 'pending', ip: remote_ip)
     if job.save
       job.sync_issues_async
