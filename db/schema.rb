@@ -10,11 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_08_08_160334) do
+ActiveRecord::Schema[7.0].define(version: 2023_08_23_140224) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "exports", force: :cascade do |t|
+    t.string "date"
+    t.string "bucket_name"
+    t.integer "issues_count"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "hosts", force: :cascade do |t|
     t.string "name"
