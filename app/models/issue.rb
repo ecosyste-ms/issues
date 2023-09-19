@@ -60,4 +60,8 @@ class Issue < ApplicationRecord
     metadata = parse_dependabot_metadata
     update(dependency_metadata: metadata) if metadata.present?
   end
+
+  def bot?
+    user.ends_with?('[bot]')
+  end
 end

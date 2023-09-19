@@ -81,6 +81,9 @@
             <% @repository.issue_authors.first(15).each do |author, count| %>
               <li>
                 <%= link_to author, host_author_path(@host.name, author) %>
+                <% if bot?(author) %>
+                  <span title='bot'>🤖</span>
+                <% end %>
                 (<%= number_with_delimiter count %>)
               </li>
             <% end %>
@@ -92,6 +95,9 @@
             <% @repository.pull_request_authors.first(15).each do |author, count| %>
               <li>
                 <%= link_to author, host_author_path(@host.name, author) %>
+                <% if bot?(author) %>
+                  <span title='bot'>🤖</span>
+                <% end %>
                 (<%= number_with_delimiter count %>)
               </li>
             <% end %>
