@@ -36,6 +36,10 @@ class Issue < ApplicationRecord
   scope :package_name, ->(package_name) { dependabot.with_dependency_metadata.where("dependency_metadata->>'package_name' = ?", package_name) }
   scope :ecosystem, ->(ecosystem) { dependabot.with_dependency_metadata.where("dependency_metadata->>'ecosystem' = ?", ecosystem) }
 
+  def to_param
+    number.to_s
+  end
+
   def html_url
     host.host_instance.issue_url(repository, self)
   end

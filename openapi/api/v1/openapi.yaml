@@ -172,6 +172,100 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Repository'
+  /hosts/{hostName}/repositories/{repoName}/issues:
+    get:
+      summary: get a list of issues from a repository
+      operationId: getHostRepositoryIssues
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - in: path
+          name: repoName
+          schema:
+            type: string
+          required: true
+          description: name of repository
+        - name: page
+          in: query
+          description: pagination page number 
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records to return 
+          required: false
+          schema:
+            type: integer
+        - name: created_after
+          in: query
+          description: filter by created_at after given time
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: updated_after
+          in: query
+          description: filter by updated_at after given time
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: sort
+          in: query
+          description: field to order results by
+          required: false
+          schema:
+            type: string
+        - name: order
+          in: query
+          description: direction to order results by
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Issue'
+  /hosts/{hostName}/repositories/{repoName}/issues/{issueNumber}:
+    get:
+      summary: get an issue from a repository
+      operationId: getHostRepositoryIssue
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - in: path
+          name: repoName
+          schema:
+            type: string
+          required: true
+          description: name of repository
+        - in: path
+          name: issueNumber
+          schema:
+            type: integer
+          required: true
+          description: number of issue
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
 components:
   schemas:
     Host:
@@ -266,3 +360,54 @@ components:
         created_at:
           type: string
           format: date-time
+    Issue:
+      type: object
+      properties:
+        uuid:
+          type: integer
+        number:
+          type: integer
+        node_id:
+          type: string
+        title:
+          type: string
+        user:
+          type: string
+        labels:
+          type: string
+        assignees:
+          type: string
+        comments_count:
+          type: integer
+        pull_request:
+          type: boolean
+        author_association:
+          type: string
+        state:
+          type: string
+        state_reason:
+          type: string
+        time_to_close:
+          type: integer
+        merged_at:
+          type: string
+          format: date-time
+        dependency_metadata:
+          type: object
+        locked:
+          type: boolean
+        comments:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+        html_url:
+          type: string
+        url:
+          type: string
