@@ -307,9 +307,9 @@ components:
         pull_requests_count:
           type: integer
         avg_time_to_close_issue:
-          type: float
+          type: number
         avg_time_to_close_pull_request:
-          type: float
+          type: number
         issues_closed_count:
           type: integer
         pull_requests_closed_count:
@@ -319,9 +319,9 @@ components:
         issue_authors_count:
           type: integer
         avg_comments_per_issue:
-          type: float
+          type: number
         avg_comments_per_pull_request:
-          type: float
+          type: number
         merged_pull_requests_count:
           type: integer
         bot_issues_count:
@@ -333,9 +333,9 @@ components:
         past_year_pull_requests_count:
           type: integer
         past_year_avg_time_to_close_issue:
-          type: float
+          type: number
         past_year_avg_time_to_close_pull_request:
-          type: float
+          type: number
         past_year_issues_closed_count:
           type: integer
         past_year_pull_requests_closed_count:
@@ -345,9 +345,9 @@ components:
         past_year_issue_authors_count:
           type: integer
         past_year_avg_comments_per_issue:
-          type: float
+          type: number
         past_year_avg_comments_per_pull_request:
-          type: float
+          type: number
         past_year_merged_pull_requests_count:
           type: integer
         past_year_bot_issues_count:
