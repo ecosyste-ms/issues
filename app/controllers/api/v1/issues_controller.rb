@@ -8,6 +8,9 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
     scope = scope.created_after(params[:created_after]) if params[:created_after].present?
     scope = scope.updated_after(params[:updated_after]) if params[:updated_after].present?
 
+    scope = scope.where(pull_request: params[:pull_request]) if params[:pull_request].present?
+    scope = scope.where(state: params[:state]) if params[:state].present?
+
     if params[:sort].present? || params[:order].present?
       sort = params[:sort] || 'number'
       order = params[:order] || 'desc'
