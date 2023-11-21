@@ -6,6 +6,8 @@ class Issue < ApplicationRecord
   scope :bot, -> { where('issues.user ILIKE ?', '%[bot]') }
   scope :with_author_association, -> { where.not(author_association: nil) }
   scope :merged, -> { where.not(merged_at: nil) }
+  scope :created_after, ->(date) { where('created_at > ?', date) }
+  scope :updated_after, ->(date) { where('updated_at > ?', date) }
 
   DEPENDABOT_USERNAMES = ['dependabot[bot]', 'dependabot-preview[bot]'].freeze
   DEPENDABOT_ECOSYSTEMS = {
