@@ -360,6 +360,8 @@ components:
         created_at:
           type: string
           format: date-time
+        issues_url:
+          type: string
     Issue:
       type: object
       properties:
