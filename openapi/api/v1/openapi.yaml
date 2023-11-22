@@ -376,9 +376,13 @@ components:
         user:
           type: string
         labels:
-          type: string
+          type: array
+          items:
+            type: string
         assignees:
-          type: string
+          type: array
+          items:
+            type: string
         comments_count:
           type: integer
         pull_request:
