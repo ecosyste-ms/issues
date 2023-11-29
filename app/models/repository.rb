@@ -137,7 +137,7 @@ class Repository < ApplicationRecord
         i.parse_dependabot_metadata
         i.time_to_close = i.closed_at - i.created_at if i.closed_at.present?
         i.host_id = host.id
-        i.save
+        i.save(touch: false)
       end
     end
 

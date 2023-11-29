@@ -64,7 +64,7 @@ class Issue < ApplicationRecord
 
   def update_dependabot_metadata
     metadata = parse_dependabot_metadata
-    update(dependency_metadata: metadata) if metadata.present?
+    update_column(dependency_metadata: metadata) if metadata.present?
   end
 
   def bot?
