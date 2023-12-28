@@ -128,7 +128,6 @@ class Repository < ApplicationRecord
     issues.where(pull_request: true).past_year.group(:user).count.sort_by{|k,v| -v }
   end
 
-
   def sync_issues
     host.host_instance.load_issues(self) do |data|
       data.each do |issue|
