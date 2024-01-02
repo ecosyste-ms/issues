@@ -77,7 +77,7 @@ GEM
       tzinfo (~> 2.0)
     addressable (2.8.6)
       public_suffix (>= 2.0.2, < 6.0)
-    appsignal (3.5.0)
+    appsignal (3.5.2)
       rack
     autoprefixer-rails (10.4.16.0)
       execjs (~> 2)
@@ -176,7 +176,7 @@ GEM
     msgpack (1.7.2)
     multi_xml (0.6.0)
     mutex_m (0.2.0)
-    net-imap (0.4.8)
+    net-imap (0.4.9)
       date
       net-protocol
     net-pop (0.1.2)
@@ -186,16 +186,16 @@ GEM
     net-smtp (0.4.0)
       net-protocol
     nio4r (2.7.0)
-    nokogiri (1.15.5)
+    nokogiri (1.16.0)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
-    nokogiri (1.15.5-aarch64-linux)
+    nokogiri (1.16.0-aarch64-linux)
       racc (~> 1.4)
-    nokogiri (1.15.5-arm64-darwin)
+    nokogiri (1.16.0-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.15.5-x86_64-darwin)
+    nokogiri (1.16.0-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.15.5-x86_64-linux)
+    nokogiri (1.16.0-x86_64-linux)
       racc (~> 1.4)
     numerizer (0.1.1)
     octokit (8.0.0)
@@ -203,7 +203,7 @@ GEM
       sawyer (~> 0.9)
     pagy (6.2.0)
     pg (1.5.4)
-    pg_query (4.2.3)
+    pg_query (5.0.0)
       google-protobuf (>= 3.22.3)
     pghero (3.4.0)
       activerecord (>= 6)
@@ -290,7 +290,7 @@ GEM
       addressable (>= 2.3.5)
       faraday (>= 0.17.3, < 3)
     shoulda-context (2.0.0)
-    shoulda-matchers (5.3.0)
+    shoulda-matchers (6.0.0)
       activesupport (>= 5.2.0)
     sidekiq (7.2.0)
       concurrent-ruby (< 2)
@@ -394,4 +394,4 @@ RUBY VERSION
    ruby 3.2.2p53
 
 BUNDLED WITH
-   2.5.2
+   2.5.3
