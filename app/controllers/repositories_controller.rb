@@ -62,9 +62,9 @@ class RepositoriesController < ApplicationController
 
     case params[:chart]
     when 'issues_opened'
-      data = scope.group_by_period(period, :created_at).count
+      data = scope.issue.group_by_period(period, :created_at).count
     when 'issues_closed'
-      data = scope.group_by_period(period, :closed_at).count
+      data = scope.issue.group_by_period(period, :closed_at).count
     when 'pull_requests_opened'
       data = scope.pull_request.group_by_period(period, :created_at).count
     when 'pull_requests_closed'
