@@ -93,6 +93,7 @@ GEM
       concurrent-ruby (~> 1.0, >= 1.0.5)
       redis (>= 1.0, < 6)
     builder (3.2.4)
+    chartkick (5.0.5)
     chronic_duration (0.10.6)
       numerizer (~> 0.1.1)
     concurrent-ruby (1.2.2)
@@ -348,6 +349,7 @@ DEPENDENCIES
   appsignal
   bootsnap
   bootstrap
+  chartkick
   counter_culture
   debug
   dotenv-rails

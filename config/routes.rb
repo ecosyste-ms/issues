@@ -32,6 +32,10 @@ Rails.application.routes.draw do
 
   resources :hosts, constraints: { id: /.*/ }, only: [:index, :show], :defaults => {:format => :html} do
     resources :repositories, constraints: { id: /.*/ }, only: [:index, :show] do
+      member do
+        get 'charts', to: 'repositories#charts'
+        get 'chart_data', to: 'repositories#chart_data'
+      end
       resources :issues, constraints: { id: /.*/ }, only: [:index]
     end
     resources :authors, constraints: { id: /.*/ }, only: [:index, :show]
