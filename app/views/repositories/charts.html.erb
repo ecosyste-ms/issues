@@ -11,10 +11,19 @@
   Exclude bots: <%= @exclude_bots %><br/>
   Start date: <%= @start_date %><br/>
   End date: <%= @end_date %><br/>
+  Max: <%= @max %><br/>
   
   <%= render_chart 'issues_opened' %>
   <%= render_chart 'issues_closed' %>
+  <%= render_chart 'issue_authors' %>
+  <%= render_chart 'issue_average_time_to_close', max: nil, ytitle: 'Days' %>
+
   <%= render_chart 'pull_requests_opened' %>
   <%= render_chart 'pull_requests_closed' %>
   <%= render_chart 'pull_requests_merged' %>
+  <%= render_chart 'pull_requests_not_merged' %>
+  <%= render_chart 'pull_request_authors' %>
+  <%= render_chart 'pull_request_average_time_to_close', max: nil, ytitle: 'Days' %>
+  <%= render_chart 'pull_request_average_time_to_merge', max: nil, ytitle: 'Days' %>
+
 </div>

@@ -7,6 +7,8 @@ class Issue < ApplicationRecord
   scope :human, -> { where.not('issues.user ILIKE ?', '%[bot]') }
   scope :with_author_association, -> { where.not(author_association: nil) }
   scope :merged, -> { where.not(merged_at: nil) }
+  scope :not_merged, -> { where(merged_at: nil).where.not(closed_at: nil) }
+  scope :closed, -> { where.not(closed_at: nil) }
   scope :created_after, ->(date) { where('created_at > ?', date) }
   scope :created_before, ->(date) { where('created_at < ?', date) }
   scope :updated_after, ->(date) { where('updated_at > ?', date) }

@@ -35,7 +35,9 @@ module ApplicationHelper
     author.ends_with?('[bot]')
   end
 
-  def render_chart(name)
-    line_chart chart_data_host_repository_path(@repository.host, @repository, chart: name, period: @period, exclude_bots: @exclude_bots, start_date: @start_date, end_date: @end_date), thousands: ",", title: name.humanize
+  def render_chart(name, max: @max, ytitle: nil)
+    content_tag :div, class: 'chart-container py-4 my-4' do
+      line_chart chart_data_host_repository_path(@repository.host, @repository, chart: name, period: @period, exclude_bots: @exclude_bots, start_date: @start_date, end_date: @end_date), thousands: ",", title: name.humanize, max: max, ytitle: ytitle
+    end
   end
 end
