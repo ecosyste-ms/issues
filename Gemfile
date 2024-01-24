@@ -37,6 +37,7 @@ gem "groupdate"
 gem 'google-protobuf', '3.25.2'
 gem 'octokit'
 gem "gitlab"
+gem "redis"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
