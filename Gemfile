@@ -34,7 +34,7 @@ gem 'addressable'
 gem 'appsignal'
 gem "chartkick"
 gem "groupdate"
-gem 'google-protobuf', '3.25.3'
+gem 'google-protobuf', '4.26.0'
 gem 'octokit'
 gem "gitlab"
 gem "redis"
