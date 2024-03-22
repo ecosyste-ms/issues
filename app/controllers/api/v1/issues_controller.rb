@@ -21,11 +21,13 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
     end
 
     @pagy, @issues = pagy_countless(scope)
+    fresh_when @issues, public: true
   end
 
   def show
     @host = Host.find_by_name!(params[:host_id])
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
     @issue = @repository.issues.find_by!(number: params[:id])
+    fresh_when @issue, public: true
   end
 end

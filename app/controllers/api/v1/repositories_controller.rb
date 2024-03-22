@@ -16,6 +16,7 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
     end
 
     @pagy, @repositories = pagy_countless(scope)
+    fresh_when @repositories, public: true
   end
 
   def lookup
@@ -37,6 +38,7 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
   def show
     @host = Host.find_by_name!(params[:host_id])
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
+    fresh_when @repository, public: true
   end
 
   def ping
