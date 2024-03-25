@@ -4,6 +4,7 @@ class IssuesController < ApplicationController
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
     # TODO filters
     @pagy, @issues = pagy(@repository.issues.order('number DESC'))
+    fresh_when(@issues, public: true)
   end
 
   def dependabot
@@ -12,5 +13,6 @@ class IssuesController < ApplicationController
     scope = scope.ecosystem(params[:ecosystem]) if params[:ecosystem].present?
     scope = scope.package_name(params[:package_name]) if params[:package_name].present?
     @pagy, @issues = pagy(scope)
+    fresh_when(@issues, public: true)
   end
 end

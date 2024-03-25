@@ -4,6 +4,7 @@ class HostsController < ApplicationController
 
     @scope = Repository.visible.order('last_synced_at DESC').includes(:host)
     @pagy, @repositories = pagy_countless(@scope, items: 10)
+    fresh_when(@repositories, public: true)
   end
 
   def show
@@ -19,5 +20,6 @@ class HostsController < ApplicationController
     end
 
     @pagy, @repositories = pagy_countless(scope)
+    fresh_when(@repositories, public: true)
   end
 end

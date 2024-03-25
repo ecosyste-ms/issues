@@ -22,6 +22,7 @@ class RepositoriesController < ApplicationController
   def show
     @host = Host.find_by_name!(params[:host_id])
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
+    fresh_when(@repository, public: true)
     if @repository.nil?
       @job = @host.sync_repository_async(params[:id], request.remote_ip)
       @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
@@ -54,6 +55,7 @@ class RepositoriesController < ApplicationController
     end
 
     @max = params[:max].presence || round_up_to_nearest_50([scope.issue.group_by_period(@period, :created_at).count.values.max, scope.pull_request.group_by_period(@period, :created_at).count.values.max].max)
+    fresh_when(@repository, public: true)
   end
 
   def chart_data
@@ -117,6 +119,7 @@ class RepositoriesController < ApplicationController
     # Number of new pull request authors
 
     render json: data
+    fresh_when(@repository, public: true)
   end
 
   private

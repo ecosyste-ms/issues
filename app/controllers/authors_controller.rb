@@ -21,11 +21,13 @@ class AuthorsController < ApplicationController
 
     @issue_labels_count = @host.issues.where(user: params[:id]).where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
     @pull_request_labels_count = @host.issues.where(user: params[:id]).where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+    expires_in 1.day, public: true
   end
 
   def index
     @host = Host.find_by!(name: params[:host_id])
     @scope = @host.issues.group(:user).count.sort_by{|k,v| -v }
     @pagy, @authors = pagy_array(@scope)
+    expires_in 1.day, public: true
   end
 end
