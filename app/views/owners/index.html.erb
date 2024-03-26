@@ -1,4 +1,4 @@
-<% @meta_title = "#{@host.to_s} owners" %>
+<% @meta_title = "#{@host.to_s} Owners" %>
 
 <div class="container-sm">
   <h1 class='mb-4'>
@@ -15,8 +15,16 @@
       </a>
     </li>
     <li class="nav-item">
+      <a class="nav-link" aria-current="page">
+        Authors
+        <span class="badge bg-secondary rounded-pill">
+          # TODO cache authors count onto host
+        </span>
+      </a>
+    </li>
+    <li class="nav-item">
       <a class="nav-link active" aria-current="page">
-        owners
+        Owners
         <span class="badge bg-secondary rounded-pill">
           <%= number_with_delimiter @scope.length %>
         </span>
