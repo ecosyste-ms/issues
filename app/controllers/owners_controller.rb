@@ -9,7 +9,6 @@ class OwnersController < ApplicationController
     @host = Host.find_by!(name: params[:host_id])
     @owner = params[:id]
 
-
     @issues_count = @host.issues.owner(@owner).where(pull_request: false).count
     @pull_requests_count = @host.issues.owner(@owner).where(pull_request: true).count
     @merged_pull_requests_count = @host.issues.owner(@owner).where(pull_request: true).where.not(merged_at: nil).count
@@ -28,7 +27,5 @@ class OwnersController < ApplicationController
 
     @issue_labels_count = @host.issues.owner(@owner).where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
     @pull_request_labels_count = @host.issues.owner(@owner).where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
-
-    
   end
 end
