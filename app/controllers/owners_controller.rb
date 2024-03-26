@@ -1,0 +1,34 @@
+class OwnersController < ApplicationController
+  def index
+    @host = Host.find_by!(name: params[:host_id])
+    @scope = @host.repositories.pluck(:full_name).map { |owner| owner.split('/').first.downcase }.uniq
+    @pagy, @owners = pagy_array(@scope)
+  end
+
+  def show
+    @host = Host.find_by!(name: params[:host_id])
+    @owner = params[:id]
+
+
+    @issues_count = @host.issues.owner(@owner).where(pull_request: false).count
+    @pull_requests_count = @host.issues.owner(@owner).where(pull_request: true).count
+    @merged_pull_requests_count = @host.issues.owner(@owner).where(pull_request: true).where.not(merged_at: nil).count
+
+    @average_issue_close_time = @host.issues.owner(@owner).where(pull_request: false).average(:time_to_close)
+    @average_pull_request_close_time = @host.issues.owner(@owner).where(pull_request: true).average(:time_to_close)
+
+    @average_issue_comments_count = @host.issues.owner(@owner).where(pull_request: false).average(:comments_count)
+    @average_pull_request_comments_count = @host.issues.owner(@owner).where(pull_request: true).average(:comments_count)
+    
+    @issue_repos = @host.issues.owner(@owner).where(pull_request: false).group(:repository).count.sort_by{|k,v| -v }
+    @pull_request_repos = @host.issues.owner(@owner).where(pull_request: true).group(:repository).count.sort_by{|k,v| -v }
+    
+    @issue_author_associations_count = @host.issues.owner(@owner).where(pull_request: false).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
+    @pull_request_author_associations_count = @host.issues.owner(@owner).where(pull_request: true).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
+
+    @issue_labels_count = @host.issues.owner(@owner).where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+    @pull_request_labels_count = @host.issues.owner(@owner).where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+
+    
+  end
+end

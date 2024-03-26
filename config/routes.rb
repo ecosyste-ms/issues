@@ -39,6 +39,7 @@ Rails.application.routes.draw do
       resources :issues, constraints: { id: /.*/ }, only: [:index]
     end
     resources :authors, constraints: { id: /.*/ }, only: [:index, :show]
+    resources :owners, constraints: { id: /.*/ }, only: [:index, :show]
   end
 
   get '/dependabot', to: 'issues#dependabot', as: :dependabot

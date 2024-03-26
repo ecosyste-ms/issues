@@ -15,6 +15,8 @@ class Issue < ApplicationRecord
   scope :pull_request, -> { where(pull_request: true) }
   scope :issue, -> { where(pull_request: false) }
 
+  scope :owner, ->(owner) { joins(:repository).where('repositories.full_name ILIKE ?', "#{owner}/%") }
+
   DEPENDABOT_USERNAMES = ['dependabot[bot]', 'dependabot-preview[bot]'].freeze
   DEPENDABOT_ECOSYSTEMS = {
     'ruby' => 'rubygems',
