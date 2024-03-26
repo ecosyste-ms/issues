@@ -32,3 +32,13 @@ json.pull_request_labels_count @pull_request_labels_count do |label, count|
   json.label label
   json.count count
 end
+json.maintaining @maintainers do |repo, count|
+  json.repository repo.full_name
+  json.count count
+  json.url api_v1_host_repository_url(@host, repo)
+end
+json.active_maintaining @active_maintainers do |repo, count|
+  json.repository repo.full_name
+  json.count count
+  json.url api_v1_host_repository_url(@host, repo)
+end

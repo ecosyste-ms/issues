@@ -31,6 +31,10 @@ class Api::V1::OwnersController < Api::V1::ApplicationController
 
     @issue_authors = @host.issues.owner(@owner).where(pull_request: false).group(:user).count.sort_by{|k,v| -v }.first(15)
     @pull_request_authors = @host.issues.owner(@owner).where(pull_request: true).group(:user).count.sort_by{|k,v| -v }.first(15)
+
+    @maintainers = @host.issues.owner(@owner).maintainers.group(:user).count.sort_by{|k,v| -v }
+    @active_maintainers = @host.issues.owner(@owner).maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
+
     expires_in 1.day, public: true
   end
 end
