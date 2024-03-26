@@ -4,7 +4,7 @@ class IssuesController < ApplicationController
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
     # TODO filters
     @pagy, @issues = pagy(@repository.issues.order('number DESC'))
-    fresh_when(@issues, public: true)
+    expires_in 1.hour, public: true
   end
 
   def dependabot
