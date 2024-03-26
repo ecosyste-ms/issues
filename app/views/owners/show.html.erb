@@ -73,7 +73,7 @@
     <div class='col-md-4'>
       <h4>Top Issue Authors</h4>
       <ul>
-        <% @host.issues.owner(@owner).where(pull_request: false).group(:user).count.sort_by{|k,v| -v }.first(15).each do |author, count| %>
+        <% @issue_authors.each do |author, count| %>
           <li>
             <%= link_to author, host_author_path(@host.name, author) %>
             <% if bot?(author) %>
@@ -87,7 +87,7 @@
     <div class='col-md-4'>
       <h4>Top Pull Request Authors</h4>
       <ul>
-        <% @host.issues.owner(@owner).where(pull_request: true).group(:user).count.sort_by{|k,v| -v }.first(15).each do |author, count| %>
+        <% @pull_request_authors.each do |author, count| %>
           <li>
             <%= link_to author, host_author_path(@host.name, author) %>
             <% if bot?(author) %>

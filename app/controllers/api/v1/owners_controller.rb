@@ -1,4 +1,4 @@
-class OwnersController < ApplicationController
+class Api::V1::OwnersController < Api::V1::ApplicationController
   def index
     @host = Host.find_by!(name: params[:host_id])
     @scope = @host.repositories.where.not(owner: nil).group(:owner).count.sort_by{|k,v| -v }

@@ -24,6 +24,8 @@ Rails.application.routes.draw do
             get 'ping', to: 'repositories#ping'
           end
         end
+        resources :authors, constraints: { id: /.*/ }, only: [:index, :show]
+        resources :owners, constraints: { id: /.*/ }, only: [:index, :show]
       end
     end
   end
