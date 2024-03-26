@@ -10,11 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_08_23_140224) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_26_120138) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "app_installations", force: :cascade do |t|
+    t.integer "github_id"
+    t.integer "app_id"
+    t.string "account_login"
+    t.integer "account_id"
+    t.string "account_type"
+    t.string "target_type"
+    t.integer "target_id"
+    t.json "permissions"
+    t.json "events"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "exports", force: :cascade do |t|
     t.string "date"
@@ -114,6 +128,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_23_140224) do
     t.integer "past_year_bot_pull_requests_count"
     t.integer "merged_pull_requests_count"
     t.integer "past_year_merged_pull_requests_count"
+    t.string "owner"
     t.index "host_id, lower((full_name)::text)", name: "index_repositories_on_host_id_lower_full_name", unique: true
   end
 

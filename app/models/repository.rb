@@ -36,7 +36,7 @@ class Repository < ApplicationRecord
   end
 
   def owner
-    full_name.split('/').first
+    read_attribute(:owner) || full_name.split('/').first
   end
 
   def sync_async(remote_ip = '0.0.0.0')
@@ -63,6 +63,7 @@ class Repository < ApplicationRecord
     return if response.status != 200
     json = response.body
 
+    self.owner = json['owner']
     self.status = json['status']
     self.default_branch = json['default_branch']
     self.save    
