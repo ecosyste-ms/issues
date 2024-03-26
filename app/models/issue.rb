@@ -16,6 +16,9 @@ class Issue < ApplicationRecord
   scope :issue, -> { where(pull_request: false) }
 
   scope :owner, ->(owner) { joins(:repository).where('repositories.owner = ?', owner) }
+  scope :maintainers, -> { where(author_association: MAINTAINER_ASSOCIATIONS) }
+
+  MAINTAINER_ASSOCIATIONS = ["MEMBER", "OWNER", "COLLABORATOR"]
 
   DEPENDABOT_USERNAMES = ['dependabot[bot]', 'dependabot-preview[bot]'].freeze
   DEPENDABOT_ECOSYSTEMS = {
