@@ -1,7 +1,7 @@
 class OwnersController < ApplicationController
   def index
     @host = Host.find_by!(name: params[:host_id])
-    @scope = @host.repositories.pluck(:full_name).map { |owner| owner.split('/').first.downcase }.uniq
+    @scope = @host.repositories.group(:owner).count.sort_by{|k,v| -v }
     @pagy, @owners = pagy_array(@scope)
   end
 
