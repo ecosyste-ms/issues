@@ -15,6 +15,7 @@ class Issue < ApplicationRecord
   scope :pull_request, -> { where(pull_request: true) }
   scope :issue, -> { where(pull_request: false) }
 
+  scope :user, ->(user) { where(user: user) }
   scope :owner, ->(owner) { joins(:repository).where('repositories.owner = ?', owner) }
   scope :maintainers, -> { where(author_association: MAINTAINER_ASSOCIATIONS) }
 

@@ -28,6 +28,8 @@ class RepositoriesController < ApplicationController
       @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
       raise ActiveRecord::RecordNotFound unless @repository
     end
+    @maintainers = @repository.issues.maintainers.group(:user).count.sort_by{|k,v| -v }.first(15)
+    @active_maintainers = @repository.issues.maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }.first(15)
   end
 
   def charts

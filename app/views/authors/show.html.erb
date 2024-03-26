@@ -46,6 +46,33 @@
 
   <div class='row'>
     <div class='col-md-4'>
+      <h4>Maintainer</h4>
+      <ul>
+        <% @maintainers.each do |full_name, count| %>
+          <li>
+            <%= link_to full_name, host_repository_path(@host.name, full_name) %>:
+            <%= number_with_delimiter count %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    <div class='col-md-4'>
+      <h4>Active Maintainer</h4>
+      <ul>
+        <% @active_maintainers.each do |full_name, count| %>
+          <li>
+            <%= link_to full_name, host_repository_path(@host.name, full_name) %>:
+            <%= number_with_delimiter count %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+
+  <hr/>
+
+  <div class='row'>
+    <div class='col-md-4'>
       <h4>Issue Author Associations</h4>
       <ul>
         <% @issue_author_associations_count.each do |role, count| %>

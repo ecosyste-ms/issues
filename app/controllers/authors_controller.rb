@@ -21,6 +21,10 @@ class AuthorsController < ApplicationController
 
     @issue_labels_count = @host.issues.where(user: params[:id]).where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
     @pull_request_labels_count = @host.issues.where(user: params[:id]).where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+
+    @maintainers = @host.issues.user(@author).maintainers.group(:repository).count.sort_by{|k,v| -v }.first(15)
+    @active_maintainers = @host.issues.user(@author).maintainers.where('issues.created_at > ?', 1.year.ago).group(:repository).count.sort_by{|k,v| -v }.first(15)
+
     expires_in 1.day, public: true
   end
 

@@ -106,7 +106,38 @@
           </ul>
         </div>
       </div>
-
+      <hr/>
+      <div class='row'>
+        <div class='col-md-4'>
+          <h4>All Maintainers</h4>
+          <ul>
+            <% @maintainers.each do |author, count| %>
+              <li>
+                <%= link_to author, host_author_path(@host.name, author) %>
+                <% if bot?(author) %>
+                  <span title='bot'>🤖</span>
+                <% end %>
+                (<%= number_with_delimiter count %>)
+              </li>
+            <% end %>
+          </ul>
+        </div>
+        <div class='col-md-4'>
+          <h4>Active Maintainers</h4>
+          <ul>
+            <% @active_maintainers.each do |author, count| %>
+              <li>
+                <%= link_to author, host_author_path(@host.name, author) %>
+                <% if bot?(author) %>
+                  <span title='bot'>🤖</span>
+                <% end %>
+                (<%= number_with_delimiter count %>)
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+      
       <hr>
       <div class='row'>
         <div class='col-md-4'>
