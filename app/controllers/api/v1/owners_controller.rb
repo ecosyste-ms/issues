@@ -37,4 +37,14 @@ class Api::V1::OwnersController < Api::V1::ApplicationController
 
     expires_in 1.day, public: true
   end
+
+  def maintainers
+    @host = Host.find_by!(name: params[:host_id])
+    @owner = params[:id]
+
+    @maintainers = @host.issues.owner(@owner).maintainers.group(:user).count.sort_by{|k,v| -v }
+    @active_maintainers = @host.issues.owner(@owner).maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
+
+    expires_in 1.day, public: true    
+  end
 end

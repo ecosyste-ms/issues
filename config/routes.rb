@@ -25,7 +25,11 @@ Rails.application.routes.draw do
           end
         end
         resources :authors, constraints: { id: /.*/ }, only: [:index, :show]
-        resources :owners, constraints: { id: /.*/ }, only: [:index, :show]
+        resources :owners, constraints: { id: /.*/ }, only: [:index, :show] do
+          member do
+            get 'maintainers', to: 'owners#maintainers'
+          end
+        end
       end
     end
   end
