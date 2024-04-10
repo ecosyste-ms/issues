@@ -65,8 +65,11 @@ module Hosts
     end
 
     def load_issues(repository)
-      url = "#{api_client.api_endpoint}repos/#{repository.full_name}/issues?state=all&sort=updated&direction=desc&per_page=100"
-      url = "#{url}&since=#{repository.last_synced_at}" if repository.last_synced_at.present?
+      if repository.last_synced_at.present?
+        url = "#{api_client.api_endpoint}repos/#{repository.full_name}/issues?state=all&sort=updated&direction=desc&per_page=100&since=#{repository.last_synced_at}"
+      else
+        url = "#{api_client.api_endpoint}repos/#{repository.full_name}/issues?state=all&sort=created_at&direction=asc&per_page=100"
+      end
 
       response = api_client.agent.call(:get, url, nil, {})
       
@@ -76,7 +79,7 @@ module Hosts
 
       while response && response.rels[:next]
         response = response.rels[:next].get
-
+        
         map_issues(response.data)
 
         yield(mapped_issues)
