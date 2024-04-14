@@ -173,6 +173,7 @@ class Repository < ApplicationRecord
     self.past_year_merged_pull_requests_count = issues.where(pull_request: true).past_year.merged.count
 
     self.last_synced_at = Time.now
+    self.status = nil
     self.save
   rescue
     self.status = 'error'
