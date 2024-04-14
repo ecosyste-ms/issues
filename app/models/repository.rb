@@ -180,4 +180,8 @@ class Repository < ApplicationRecord
     self.last_synced_at = Time.now
     self.save
   end
+
+  def latest_issue_number
+    issues.maximum(:number)
+  end
 end
