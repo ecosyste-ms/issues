@@ -12,23 +12,8 @@
 
 ActiveRecord::Schema[7.1].define(version: 2024_04_02_102936) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
-
-  create_table "app_installations", force: :cascade do |t|
-    t.integer "github_id"
-    t.integer "app_id"
-    t.string "account_login"
-    t.integer "account_id"
-    t.string "account_type"
-    t.string "target_type"
-    t.integer "target_id"
-    t.json "permissions"
-    t.json "events"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
 
   create_table "exports", force: :cascade do |t|
     t.string "date"
@@ -66,7 +51,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_02_102936) do
     t.integer "comments_count"
     t.boolean "pull_request"
     t.datetime "closed_at"
-    t.string "closed_by"
     t.string "author_association"
     t.string "state_reason"
     t.datetime "created_at", null: false
@@ -106,8 +90,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_02_102936) do
     t.integer "pull_requests_closed_count"
     t.integer "pull_request_authors_count"
     t.integer "issue_authors_count"
-    t.integer "issue_closers_count"
-    t.integer "pull_request_closers_count"
     t.float "avg_comments_per_issue"
     t.float "avg_comments_per_pull_request"
     t.integer "bot_issues_count"
@@ -120,8 +102,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_02_102936) do
     t.integer "past_year_pull_requests_closed_count"
     t.integer "past_year_pull_request_authors_count"
     t.integer "past_year_issue_authors_count"
-    t.integer "past_year_issue_closers_count"
-    t.integer "past_year_pull_request_closers_count"
     t.float "past_year_avg_comments_per_issue"
     t.float "past_year_avg_comments_per_pull_request"
     t.integer "past_year_bot_issues_count"
