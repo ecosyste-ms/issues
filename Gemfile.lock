@@ -1,3 +1,10 @@
+GIT
+  remote: https://github.com/ruby/net-pop.git
+  revision: e8d0afe2773b9eb6a23c39e9e437f6fc0fc7c733
+  specs:
+    net-pop (0.1.2)
+      net-protocol
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -131,7 +138,6 @@ GEM
     ffi (1.17.0-aarch64-linux-musl)
     ffi (1.17.0-arm64-darwin)
     ffi (1.17.0-x86_64-darwin)
-    ffi (1.17.0-x86_64-linux-gnu)
     gitlab (5.0.0)
       httparty (~> 0.20)
       terminal-table (>= 1.5.1)
@@ -147,9 +153,6 @@ GEM
       bigdecimal
       rake (>= 13)
     google-protobuf (4.27.1-x86_64-darwin)
-      bigdecimal
-      rake (>= 13)
-    google-protobuf (4.27.1-x86_64-linux)
       bigdecimal
       rake (>= 13)
     groupdate (6.4.0)
@@ -195,8 +198,6 @@ GEM
     net-imap (0.4.14)
       date
       net-protocol
-    net-pop (0.1.2)
-      net-protocol
     net-protocol (0.2.2)
       timeout
     net-smtp (0.5.0)
@@ -210,8 +211,6 @@ GEM
     nokogiri (1.16.6-arm64-darwin)
       racc (~> 1.4)
     nokogiri (1.16.6-x86_64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.16.6-x86_64-linux)
       racc (~> 1.4)
     numerizer (0.1.1)
     octokit (9.1.0)
@@ -363,9 +362,9 @@ GEM
 PLATFORMS
   aarch64-linux-musl
   arm64-darwin-21
+  arm64-darwin-23
   ruby
   x86_64-darwin-20
-  x86_64-linux
 
 DEPENDENCIES
   addressable
@@ -386,6 +385,7 @@ DEPENDENCIES
   jbuilder
   jquery-rails
   mocha
+  net-pop!
   octokit
   pagy
   pg (~> 1.5)
@@ -414,7 +414,7 @@ DEPENDENCIES
   webmock
 
 RUBY VERSION
-   ruby 3.3.1p53
+   ruby 3.3.3p53
 
 BUNDLED WITH
    2.5.14
