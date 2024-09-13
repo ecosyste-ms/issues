@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.3.4"
+ruby "3.3.5"
 
 gem "rails", "~> 7.2.1"
 gem "sprockets-rails"
@@ -34,11 +34,13 @@ gem 'addressable'
 gem 'appsignal'
 gem "chartkick"
 gem "groupdate"
-gem 'google-protobuf', '4.28.0'
+gem 'google-protobuf'
 gem 'octokit'
 gem "gitlab"
 gem "redis"
 gem "postgresql_cursor"
+gem 'ostruct'
+gem 'faraday-multipart'
 
 group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]

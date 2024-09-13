@@ -117,6 +117,8 @@ GEM
       logger
     faraday-follow_redirects (0.3.0)
       faraday (>= 1, < 3)
+    faraday-multipart (1.0.4)
+      multipart-post (~> 2)
     faraday-net_http (3.3.0)
       net-http
     faraday-retry (2.2.1)
@@ -133,16 +135,16 @@ GEM
       terminal-table (>= 1.5.1)
     globalid (1.2.1)
       activesupport (>= 6.1)
-    google-protobuf (4.28.0)
+    google-protobuf (4.28.1)
       bigdecimal
       rake (>= 13)
-    google-protobuf (4.28.0-aarch64-linux)
+    google-protobuf (4.28.1-aarch64-linux)
       bigdecimal
       rake (>= 13)
-    google-protobuf (4.28.0-arm64-darwin)
+    google-protobuf (4.28.1-arm64-darwin)
       bigdecimal
       rake (>= 13)
-    google-protobuf (4.28.0-x86_64-linux)
+    google-protobuf (4.28.1-x86_64-linux)
       bigdecimal
       rake (>= 13)
     groupdate (6.4.0)
@@ -183,6 +185,7 @@ GEM
     msgpack (1.7.2)
     multi_xml (0.7.1)
       bigdecimal (~> 3.1)
+    multipart-post (2.4.1)
     net-http (0.4.1)
       uri
     net-imap (0.4.16)
@@ -208,6 +211,7 @@ GEM
     octokit (9.1.0)
       faraday (>= 1, < 3)
       sawyer (~> 0.9)
+    ostruct (0.6.0)
     pagy (9.0.9)
     pg (1.5.8)
     pg_query (5.1.0)
@@ -370,15 +374,17 @@ DEPENDENCIES
   dotenv-rails
   faraday
   faraday-follow_redirects
+  faraday-multipart
   faraday-retry
   faraday-typhoeus
   gitlab
-  google-protobuf (= 4.28.0)
+  google-protobuf
   groupdate
   jbuilder
   jquery-rails
   mocha
   octokit
+  ostruct
   pagy
   pg (~> 1.5)
   pg_query
@@ -406,7 +412,7 @@ DEPENDENCIES
   webmock
 
 RUBY VERSION
-   ruby 3.3.4p53
+   ruby 3.3.5p53
 
 BUNDLED WITH
    2.5.18
