@@ -16,4 +16,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: andrew/ruby-upgrade-action@main
         with:
-          github-token: ${{ secrets.WORKFLOW_PAT }} 
+          github-token: ${{ secrets.GITHUB_TOKEN }}
