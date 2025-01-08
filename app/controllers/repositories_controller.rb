@@ -1,6 +1,7 @@
 class RepositoriesController < ApplicationController
   def lookup
     url = params[:url]
+    raise ActiveRecord::RecordNotFound unless url.present?
     parsed_url = Addressable::URI.parse(url)
     @host = Host.find_by_domain(parsed_url.host)
     raise ActiveRecord::RecordNotFound unless @host
