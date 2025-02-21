@@ -6,7 +6,15 @@ module ApplicationHelper
   end
 
   def meta_description
-    @meta_description || 'An open API service for providing issue and pull request metadata for open source projects.'
+    @meta_description || app_description
+  end
+
+  def app_name
+    "Issues"
+  end
+
+  def app_description
+    'An open API service for providing issue and pull request metadata for open source projects.'
   end
 
   def obfusticate_email(email)
