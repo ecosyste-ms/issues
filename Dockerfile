@@ -1,24 +1,24 @@
-FROM ruby:3.4.2-alpine
+FROM ruby:3.4.2-slim
 
-ENV APP_ROOT /usr/src/app
-ENV DATABASE_PORT 5432
+ENV APP_ROOT=/usr/src/app
+ENV DATABASE_PORT=5432
 WORKDIR $APP_ROOT
 
 # * Setup system
 # * Install Ruby dependencies
-RUN apk add --update \
-    build-base \
-    netcat-openbsd \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     git \
     nodejs \
-    postgresql-dev \
+    libpq-dev \
     tzdata \
-    curl-dev \
-    libc6-compat \
- && rm -rf /var/cache/apk/* 
+    curl \
+    libyaml-dev \
+    libcurl4-openssl-dev \
+ && rm -rf /var/lib/apt/lists/*
 
 # Will invalidate cache as soon as the Gemfile changes
-COPY Gemfile Gemfile.lock $APP_ROOT/
+COPY Gemfile Gemfile.lock .ruby-version $APP_ROOT/
 
 RUN bundle config --global frozen 1 \
  && bundle config set without 'test' \
@@ -34,7 +34,7 @@ RUN bundle exec bootsnap precompile --gemfile app/ lib/
 
 # Precompile assets for a production environment.
 # This is done to include assets in production images on Dockerhub.
-RUN SECRET_KEY_BASE_DUMMY=1 RAILS_ENV=production bundle exec rake assets:precompile
+RUN SECRET_KEY_BASE=1 RAILS_ENV=production bundle exec rake assets:precompile
 
 # Startup
 CMD ["bin/docker-start"]
