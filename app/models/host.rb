@@ -7,6 +7,13 @@ class Host < ApplicationRecord
   validates :kind, presence: true
 
   scope :visible, -> { where('repositories_count > 0') }
+  scope :with_issues, -> { where('issues_count > 0') }
+  scope :with_pull_requests, -> { where('pull_requests_count > 0') }
+  scope :with_authors, -> { where('authors_count > 0') }
+
+  def self.find_by_name(name)
+    Host.all.find { |host| host.name == name }
+  end
 
   def self.find_by_domain(domain)
     Host.all.find { |host| host.domain == domain }
