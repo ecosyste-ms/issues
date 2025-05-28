@@ -20,6 +20,11 @@ class RepositoriesController < ApplicationController
     end
   end
 
+  def index
+    @host = Host.find_by_name!(params[:host_id])
+    redirect_to host_path(@host)
+  end
+
   def show
     @host = Host.find_by_name!(params[:host_id])
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
