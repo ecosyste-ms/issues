@@ -46,11 +46,7 @@ class Job < ApplicationRecord
 
   def sync_issues
     # TODO don't depend on the repos service being up
-    conn = Faraday.new('https://repos.ecosyste.ms') do |f|
-      f.request :json
-      f.request :retry
-      f.response :json
-    end
+    conn = EcosystemsApiClient.client('https://repos.ecosyste.ms')
     
     response = conn.get("api/v1/repositories/lookup?url=#{CGI.escape(url)}")
     return nil unless response.success?

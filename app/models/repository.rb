@@ -50,11 +50,7 @@ class Repository < ApplicationRecord
   end
 
   def sync_details
-    conn = Faraday.new(repos_api_url) do |f|
-      f.request :json
-      f.request :retry
-      f.response :json
-    end
+    conn = EcosystemsApiClient.client(repos_api_url)
     response = conn.get
     if response.status == 404
       self.status = 'not_found'

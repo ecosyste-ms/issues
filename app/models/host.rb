@@ -56,11 +56,7 @@ class Host < ApplicationRecord
   end
 
   def sync_recently_updated_repositories_async
-    conn = Faraday.new('https://repos.ecosyste.ms') do |f|
-      f.request :json
-      f.request :retry
-      f.response :json
-    end
+    conn = EcosystemsApiClient.client('https://repos.ecosyste.ms')
     
     response = conn.get('/api/v1/hosts/' + name + '/repositories')
     return nil unless response.success?
@@ -85,11 +81,7 @@ class Host < ApplicationRecord
   end
 
   def self.sync_all
-    conn = Faraday.new('https://repos.ecosyste.ms') do |f|
-      f.request :json
-      f.request :retry
-      f.response :json
-    end
+    conn = EcosystemsApiClient.client('https://repos.ecosyste.ms')
     
     response = conn.get('/api/v1/hosts')
     return nil unless response.success?
