@@ -10,10 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_02_102936) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_08_060209) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
-  enable_extension "plpgsql"
 
   create_table "exports", force: :cascade do |t|
     t.string "date"
@@ -35,6 +35,20 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_02_102936) do
     t.integer "issues_count"
     t.integer "pull_requests_count"
     t.integer "authors_count"
+  end
+
+  create_table "imports", force: :cascade do |t|
+    t.string "filename"
+    t.datetime "imported_at"
+    t.integer "issues_count"
+    t.integer "pull_requests_count"
+    t.integer "created_count"
+    t.integer "updated_count"
+    t.boolean "success"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["filename"], name: "index_imports_on_filename", unique: true
   end
 
   create_table "issues", force: :cascade do |t|
@@ -60,6 +74,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_02_102936) do
     t.integer "host_id"
     t.json "dependency_metadata"
     t.index ["host_id", "user"], name: "index_issues_on_host_id_and_user"
+    t.index ["host_id", "uuid"], name: "index_issues_on_host_id_and_uuid", unique: true
     t.index ["repository_id"], name: "index_issues_on_repository_id"
   end
 
@@ -112,5 +127,4 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_02_102936) do
     t.index "host_id, lower((full_name)::text)", name: "index_repositories_on_host_id_lower_full_name", unique: true
     t.index ["owner"], name: "index_repositories_on_owner"
   end
-
 end

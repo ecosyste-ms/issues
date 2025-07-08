@@ -12,7 +12,10 @@ class Repository < ApplicationRecord
   scope :owner, ->(owner) { where(owner: owner) }
 
   def self.sync_least_recently_synced
-    Repository.active.order('last_synced_at ASC').limit(3000).each(&:sync_async)
+    github_host = Host.find_by(name: 'GitHub')
+    scope = Repository.active
+    scope = scope.where.not(host_id: github_host.id) if github_host
+    scope.order('last_synced_at ASC').limit(3000).each(&:sync_async)
   end
 
   def to_s
@@ -138,6 +141,14 @@ class Repository < ApplicationRecord
       end
     end
 
+    update_issue_counts
+  rescue
+    self.status = 'error'
+    self.last_synced_at = Time.now
+    self.save
+  end
+
+  def update_issue_counts
     self.issues_count = issues.where(pull_request: false).count
     self.pull_requests_count = issues.where(pull_request: true).count
 
@@ -170,10 +181,6 @@ class Repository < ApplicationRecord
 
     self.last_synced_at = Time.now
     self.status = nil
-    self.save
-  rescue
-    self.status = 'error'
-    self.last_synced_at = Time.now
     self.save
   end
 

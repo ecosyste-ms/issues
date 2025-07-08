@@ -1,0 +1,86 @@
+<% @meta_title = "Import Status" %>
+<% @meta_description = "Monitor the status of recent data imports from GitHub Archive" %>
+
+<div class="container-sm">
+  <h1>Import Status</h1>
+
+  <p class='lead'>
+    Monitor the status of recent data imports from GitHub Archive.
+  </p>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Last 24 Hours</h5>
+          <ul class="list-unstyled">
+            <li><strong>Total Imports:</strong> <%= @recent_stats[:total_recent] %></li>
+            <li><strong>Successful:</strong> <span class="text-success"><%= @recent_stats[:successful_recent] %></span></li>
+            <li><strong>Failed:</strong> <span class="text-danger"><%= @recent_stats[:failed_recent] %></span></li>
+            <li><strong>Issues Processed:</strong> <%= number_with_delimiter(@recent_stats[:recent_issues_count]) %></li>
+            <li><strong>PRs Processed:</strong> <%= number_with_delimiter(@recent_stats[:recent_prs_count]) %></li>
+            <li><strong>Records Created:</strong> <%= number_with_delimiter(@recent_stats[:recent_created]) %></li>
+            <li><strong>Records Updated:</strong> <%= number_with_delimiter(@recent_stats[:recent_updated]) %></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Recent Import History</h3>
+  
+  <% if @imports.any? %>
+
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Filename</th>
+            <th>Status</th>
+            <th>Issues</th>
+            <th>PRs</th>
+            <th>Created</th>
+            <th>Updated</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @imports.each do |import| %>
+            <tr class="<%= import.success? ? 'table-success' : 'table-danger' %>">
+              <td><%= time_ago_in_words(import.imported_at) %> ago</td>
+              <td><code><%= link_to import.filename, import.url, target: '_blank', class: 'text-decoration-none' %></code></td>
+              <td>
+                <% if import.success? %>
+                  <span class="badge bg-success">Success</span>
+                <% else %>
+                  <span class="badge bg-danger">Failed</span>
+                <% end %>
+              </td>
+              <td><%= import.issues_count || 0 %></td>
+              <td><%= import.pull_requests_count || 0 %></td>
+              <td><%= import.created_count || 0 %></td>
+              <td><%= import.updated_count || 0 %></td>
+              <td>
+                <% if import.error_message.present? %>
+                  <% if import.error_message.include?("\n") %>
+                    <details>
+                      <summary class="text-danger"><%= import.error_message.lines.first.strip %></summary>
+                      <pre class="small mt-2"><%= import.error_message %></pre>
+                    </details>
+                  <% else %>
+                    <small class="text-danger"><%= import.error_message %></small>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    
+    <%== pagy_bootstrap_nav(@pagy) %>
+  <% else %>
+    <p class='my-5'>No imports found.</p>
+  <% end%>
+</div>

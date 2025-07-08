@@ -110,6 +110,26 @@ module Hosts
       end
     end
 
+    def import_from_gharchive(date, hour = nil)
+      importer = GharchiveImporter.new(self)
+      
+      if hour.nil?
+        # Import entire day - update counts only at the end
+        24.times do |h|
+          importer.import_hour(date, h, update_counts: false)
+        end
+        importer.send(:update_repository_and_host_counts)
+      else
+        # Import specific hour - update counts immediately
+        importer.import_hour(date, hour)
+      end
+    end
+
+    def import_gharchive_range(start_date, end_date)
+      importer = GharchiveImporter.new(self)
+      importer.import_date_range(start_date, end_date)
+    end
+
     private
 
     def api_client(token = nil, options = {})
