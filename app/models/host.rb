@@ -15,6 +15,10 @@ class Host < ApplicationRecord
     Host.all.find { |host| host.name == name }
   end
 
+  def self.find_by_name!(name)
+    find_by_name(name) || raise(ActiveRecord::RecordNotFound.new("Couldn't find Host with name=#{name}"))
+  end
+
   def self.find_by_domain(domain)
     Host.all.find { |host| host.domain == domain }
   end
