@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_08_060209) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_09_112751) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -125,6 +125,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_08_060209) do
     t.integer "past_year_merged_pull_requests_count"
     t.string "owner"
     t.index "host_id, lower((full_name)::text)", name: "index_repositories_on_host_id_lower_full_name", unique: true
+    t.index ["host_id", "last_synced_at"], name: "index_repositories_on_host_id_last_synced_at_null_status", where: "(status IS NULL)"
     t.index ["owner"], name: "index_repositories_on_owner"
   end
 end
