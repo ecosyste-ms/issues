@@ -120,7 +120,11 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
     
     json = JSON.parse(response.body)
     assert_equal @repository.full_name, json['full_name']
-    assert_equal @repository.issues_count, json['issues_count']
+    if @repository.issues_count.nil?
+      assert_nil json['issues_count']
+    else
+      assert_equal @repository.issues_count, json['issues_count']
+    end
     assert json['maintainers'].is_a?(Array)
     assert json['active_maintainers'].is_a?(Array)
   end
