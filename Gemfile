@@ -14,7 +14,10 @@ gem "sassc-rails"
 gem "counter_culture"
 gem "faraday"
 gem "faraday-retry"
+gem "faraday-gzip"
 gem "faraday-follow_redirects"
+gem "faraday-multipart"
+gem 'faraday-net_http_persistent'
 gem "pagy"
 gem "pghero"
 gem "pg_query"
@@ -40,7 +43,6 @@ gem "gitlab"
 gem "redis"
 gem "postgresql_cursor"
 gem 'ostruct'
-gem 'faraday-multipart'
 
 group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
