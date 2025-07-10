@@ -30,8 +30,12 @@ class Job < ApplicationRecord
     ['complete', 'error'].include?(status)
   end
 
-  def sync_issues_async
-    sidekiq_id = SyncIssuesWorker.perform_async(id)
+  def sync_issues_async(priority = false)
+    if priority
+      sidekiq_id = SyncIssuesWorker.perform_with_priority(id, priority)
+    else
+      sidekiq_id = SyncIssuesWorker.perform_async(id)
+    end
     update(sidekiq_id: sidekiq_id)
   end
 

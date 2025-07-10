@@ -43,12 +43,12 @@ class Repository < ApplicationRecord
     read_attribute(:owner) || full_name.split('/').first
   end
 
-  def sync_async(remote_ip = '0.0.0.0')
+  def sync_async(remote_ip = '0.0.0.0', priority = false)
     return if last_synced_at && last_synced_at > 1.day.ago
 
     job = Job.new(url: html_url, status: 'pending', ip: remote_ip)
     if job.save
-      job.sync_issues_async
+      job.sync_issues_async(priority)
     end
   end
 

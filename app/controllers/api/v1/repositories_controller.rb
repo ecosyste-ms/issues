@@ -21,16 +21,17 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
 
   def lookup
     url = params[:url]
+    priority = params[:priority].present?
     parsed_url = Addressable::URI.parse(url)
     @host = Host.find_by_domain(parsed_url.host)
     raise ActiveRecord::RecordNotFound unless @host
     path = parsed_url.path.delete_prefix('/').chomp('/')
     @repository = @host.repositories.find_by('lower(full_name) = ?', path.downcase)
     if @repository
-      @repository.sync_async(request.remote_ip) unless @repository.last_synced_at.present? && @repository.last_synced_at > 1.day.ago
+      @repository.sync_async(request.remote_ip, priority) unless @repository.last_synced_at.present? && @repository.last_synced_at > 1.day.ago
       redirect_to api_v1_host_repository_path(@host, @repository)
     else
-      @host.sync_repository_async(path, request.remote_ip) if path.present?
+      @host.sync_repository_async(path, request.remote_ip, priority) if path.present?
       redirect_to api_v1_host_repository_path(@host, path)
     end
   end
@@ -46,10 +47,11 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
   def ping
     @host = Host.find_by_name!(params[:host_id])
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
+    priority = params[:priority].present?
     if @repository
-      @repository.sync_async
+      @repository.sync_async(request.remote_ip, priority)
     else
-      @host.sync_repository_async(path, request.remote_ip)
+      @host.sync_repository_async(params[:id], request.remote_ip, priority)
     end
     render json: { message: 'pong' }
   end

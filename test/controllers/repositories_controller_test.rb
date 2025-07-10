@@ -116,4 +116,26 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test 'lookup with priority queues to high_priority queue' do
+    url = "https://github.com/#{@repository.full_name}"
+    @repository.update!(last_synced_at: 2.days.ago)
+    
+    # Expect job to be queued with high priority
+    SyncIssuesWorker.expects(:perform_with_priority).with(anything, true).returns('fake-job-id')
+    
+    get lookup_repositories_path, params: { url: url, priority: '1' }
+    assert_redirected_to host_repository_path(@host, @repository)
+  end
+
+  test 'lookup without priority uses default queue' do
+    url = "https://github.com/#{@repository.full_name}"
+    @repository.update!(last_synced_at: 2.days.ago)
+    
+    # Expect job to be queued normally
+    SyncIssuesWorker.expects(:perform_async).with(anything).returns('fake-job-id')
+    
+    get lookup_repositories_path, params: { url: url }
+    assert_redirected_to host_repository_path(@host, @repository)
+  end
+
 end

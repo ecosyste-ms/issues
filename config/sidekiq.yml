@@ -1,3 +1,4 @@
 ---
 :queues:
-  - default
+  - [high_priority, 2]
+  - [default, 1]
