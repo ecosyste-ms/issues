@@ -16,7 +16,6 @@ FactoryBot.define do
     state_reason { nil }
     time_to_close { nil }
     merged_at { nil }
-    dependency_metadata { nil }
     
     trait :closed do
       state { 'closed' }
@@ -39,18 +38,6 @@ FactoryBot.define do
     
     trait :bot do
       user { 'dependabot[bot]' }
-    end
-    
-    trait :dependabot do
-      user { 'dependabot[bot]' }
-      labels { ['dependencies'] }
-      title { 'Bump rails from 6.0.0 to 6.1.0' }
-      dependency_metadata { {
-        ecosystem: 'rubygems',
-        package_name: 'rails',
-        current_version: '6.0.0',
-        target_version: '6.1.0'
-      } }
     end
     
     trait :with_comments do

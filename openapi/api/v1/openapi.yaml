@@ -398,8 +398,6 @@ components:
         merged_at:
           type: string
           format: date-time
-        dependency_metadata:
-          type: object
         locked:
           type: boolean
         comments:

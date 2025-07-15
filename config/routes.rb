@@ -49,7 +49,6 @@ Rails.application.routes.draw do
     resources :owners, constraints: { id: /.*/ }, only: [:index, :show]
   end
 
-  get '/dependabot', to: 'issues#dependabot', as: :dependabot
 
   resources :exports, only: [:index], path: 'open-data'
   

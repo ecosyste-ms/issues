@@ -26,15 +26,4 @@ module TestDataHelpers
     build(:host, attributes).tap(&:save!)
   end
 
-  def create_dependency_metadata(issue, attributes = {})
-    defaults = {
-      ecosystem: 'rubygems',
-      package_name: 'rails',
-      current_version: '6.0.0',
-      target_version: '6.1.0'
-    }
-    
-    metadata = defaults.merge(attributes)
-    issue.update!(dependency_metadata: metadata)
-  end
 end

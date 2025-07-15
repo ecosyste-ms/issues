@@ -134,7 +134,6 @@ class Repository < ApplicationRecord
       data.each do |issue|
         i = issues.find_or_create_by(uuid: issue[:uuid])
         i.assign_attributes issue
-        i.parse_dependabot_metadata
         i.time_to_close = i.closed_at - i.created_at if i.closed_at.present?
         i.host_id = host.id
         i.save(touch: false)
