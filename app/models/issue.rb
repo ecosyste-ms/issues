@@ -21,7 +21,6 @@ class Issue < ApplicationRecord
 
   MAINTAINER_ASSOCIATIONS = ["MEMBER", "OWNER", "COLLABORATOR"]
 
-
   def to_param
     number.to_s
   end
@@ -29,7 +28,6 @@ class Issue < ApplicationRecord
   def html_url
     host.host_instance.issue_url(repository, self)
   end
-
 
   def bot?
     user.ends_with?('[bot]')
