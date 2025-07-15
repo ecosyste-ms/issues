@@ -17,6 +17,8 @@ test:
   database: issues_test
 
 production:
-  <<: *default
+  adapter: postgresql
+  encoding: unicode
+  pool:     <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   database: issues_production
   url: <%= ENV['DATABASE_URL'] %>
