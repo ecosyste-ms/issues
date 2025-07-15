@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libyaml-dev \
     libcurl4-openssl-dev \
     zlib1g-dev \
+    netcat-traditional \
  && rm -rf /var/lib/apt/lists/*
 
 # Will invalidate cache as soon as the Gemfile changes
