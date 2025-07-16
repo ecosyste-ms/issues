@@ -3,6 +3,8 @@ class AuthorsController < ApplicationController
     @host = Host.find_by!(name: params[:host_id])
     @author = params[:id]
 
+    raise ActiveRecord::RecordNotFound if @host.issues.where(user: @author).empty?
+
     @issues_count = @host.issues.where(user: params[:id], pull_request: false).count
     @pull_requests_count = @host.issues.where(user: params[:id], pull_request: true).count
     @merged_pull_requests_count = @host.issues.where(user: params[:id], pull_request: true).where.not(merged_at: nil).count
