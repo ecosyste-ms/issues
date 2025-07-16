@@ -1,3 +1,16 @@
+# Helper method to configure logging for GHArchive tasks
+def configure_gharchive_logging(verbose: false)
+  # Set Rails logger to STDOUT for better visibility
+  Rails.logger = Logger.new(STDOUT)
+  Rails.logger.level = Logger::INFO
+  
+  # Enable database query logging if verbose mode is requested
+  if verbose
+    ActiveRecord::Base.logger = Logger.new(STDOUT)
+    ActiveRecord::Base.logger.level = Logger::DEBUG
+  end
+end
+
 namespace :gharchive do
   desc "Show import status for recent imports"
   task status: :environment do
@@ -33,6 +46,8 @@ namespace :gharchive do
   end
   desc "Import issues and pull requests from GHArchive for a specific date and hour"
   task :import_hour, [:date, :hour] => :environment do |t, args|
+    configure_gharchive_logging(verbose: ENV['VERBOSE'] == 'true')
+    
     date = Date.parse(args[:date])
     hour = args[:hour].to_i
     
@@ -47,6 +62,8 @@ namespace :gharchive do
 
   desc "Import issues and pull requests from GHArchive for an entire day"
   task :import_day, [:date] => :environment do |t, args|
+    configure_gharchive_logging(verbose: ENV['VERBOSE'] == 'true')
+    
     date = Date.parse(args[:date])
     
     puts "Importing GHArchive data for #{date}..."
@@ -69,6 +86,8 @@ namespace :gharchive do
 
   desc "Import issues and pull requests from GHArchive for a date range"
   task :import_range, [:start_date, :end_date] => :environment do |t, args|
+    configure_gharchive_logging(verbose: ENV['VERBOSE'] == 'true')
+    
     start_date = Date.parse(args[:start_date])
     end_date = Date.parse(args[:end_date])
     
@@ -77,20 +96,16 @@ namespace :gharchive do
     host = Host.find_or_create_by(name: 'GitHub')
     importer = GharchiveImporter.new(host)
     
-    (start_date..end_date).each do |date|
-      puts "\nImporting #{date}..."
-      24.times do |hour|
-        print "."
-        importer.import_hour(date, hour)
-      end
-      puts " Done!"
-    end
+    # Use the improved date range method with better progress tracking
+    importer.import_date_range(start_date, end_date)
     
     puts "\nImport completed for #{(end_date - start_date).to_i + 1} days!"
   end
 
   desc "Import recent GHArchive data (last 24 hours)"
   task import_recent: :environment do
+    configure_gharchive_logging(verbose: ENV['VERBOSE'] == 'true')
+    
     # GHArchive data is typically available with a 1-2 hour delay
     end_time = Time.now.utc - 2.hours
     start_time = end_time - 24.hours

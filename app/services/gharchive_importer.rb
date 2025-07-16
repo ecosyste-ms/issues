@@ -10,6 +10,7 @@ class GharchiveImporter
   end
 
   def import_hour(date, hour, update_counts: true, test_mode: false, skip_if_imported: true)
+    start_time = Time.current
     Rails.logger.info "[GHArchive] Starting import for #{date} hour #{hour}"
     
     # Check if already imported
@@ -21,18 +22,24 @@ class GharchiveImporter
     # Reset stats for this import
     @import_stats = { issues_count: 0, pull_requests_count: 0, created_count: 0, updated_count: 0 }
     
+    # Download phase
+    Rails.logger.info "[GHArchive] Phase 1/4: Downloading data for #{date} hour #{hour}"
     url = build_url(date, hour)
     compressed_data = download_file(url)
     if compressed_data.nil?
       Import.record_failure(date, hour, "Failed to download file from #{url}")
       return false
     end
+    Rails.logger.info "[GHArchive] Downloaded #{compressed_data.size} bytes from #{url}"
     
+    # Parse phase
+    Rails.logger.info "[GHArchive] Phase 2/4: Parsing JSON events"
     events = parse_jsonl(compressed_data, limit: test_mode ? 100 : nil)
     
     if test_mode && events.any? { |e| e['type'].in?(%w[IssuesEvent PullRequestEvent]) }
       # Process just a few events to test
       test_events = events.select { |e| e['type'].in?(%w[IssuesEvent PullRequestEvent]) }.first(5)
+      Rails.logger.info "[GHArchive] TEST MODE: Processing #{test_events.size} test events"
       process_events(test_events)
       
       # Check if any issues were created
@@ -46,14 +53,22 @@ class GharchiveImporter
       end
     end
     
+    # Process phase
+    Rails.logger.info "[GHArchive] Phase 3/4: Processing events and upserting data"
     process_events(events)
     
-    # Update counts for affected repositories and host
-    update_repository_and_host_counts if update_counts && @affected_repository_ids.any?
+    # Update counts phase
+    if update_counts && @affected_repository_ids.any?
+      Rails.logger.info "[GHArchive] Phase 4/4: Updating repository and host counts for #{@affected_repository_ids.size} repositories"
+      update_repository_and_host_counts
+    else
+      Rails.logger.info "[GHArchive] Phase 4/4: Skipping count updates (#{@affected_repository_ids.size} repositories affected)"
+    end
     
     # Record successful import
     Import.create_from_import(date, hour, @import_stats)
-    Rails.logger.info "[GHArchive] Import completed for #{date} hour #{hour}: #{@import_stats}"
+    elapsed_time = Time.current - start_time
+    Rails.logger.info "[GHArchive] Import completed for #{date} hour #{hour} in #{elapsed_time.round(2)}s: #{@import_stats}"
     
     true
   rescue => e
@@ -63,15 +78,45 @@ class GharchiveImporter
   end
 
   def import_date_range(start_date, end_date)
-    (start_date..end_date).each do |date|
+    range_start_time = Time.current
+    total_days = (end_date - start_date).to_i + 1
+    total_hours = total_days * 24
+    
+    Rails.logger.info "[GHArchive] Starting import for date range #{start_date} to #{end_date} (#{total_days} days, #{total_hours} hours)"
+    
+    completed_hours = 0
+    successful_hours = 0
+    failed_hours = 0
+    
+    (start_date..end_date).each_with_index do |date, day_index|
+      Rails.logger.info "[GHArchive] Processing day #{day_index + 1}/#{total_days}: #{date}"
+      
       24.times do |hour|
         # Don't update counts for each hour, do it at the end
-        import_hour(date, hour, update_counts: false)
+        result = import_hour(date, hour, update_counts: false)
+        completed_hours += 1
+        
+        if result
+          successful_hours += 1
+        else
+          failed_hours += 1
+        end
+        
+        if completed_hours % 24 == 0 || completed_hours == total_hours
+          progress_percent = (completed_hours.to_f / total_hours * 100).round(1)
+          Rails.logger.info "[GHArchive] Progress: #{completed_hours}/#{total_hours} hours (#{progress_percent}%) - #{successful_hours} successful, #{failed_hours} failed"
+        end
       end
     end
     
     # Update counts once after all imports
-    update_repository_and_host_counts if @affected_repository_ids.any?
+    if @affected_repository_ids.any?
+      Rails.logger.info "[GHArchive] Performing final count updates for all affected repositories"
+      update_repository_and_host_counts
+    end
+    
+    range_elapsed = Time.current - range_start_time
+    Rails.logger.info "[GHArchive] Date range import completed in #{range_elapsed.round(2)}s: #{successful_hours} successful, #{failed_hours} failed out of #{total_hours} total hours"
   end
 
   private
@@ -119,39 +164,110 @@ class GharchiveImporter
   end
 
   def process_events(events)
+    process_start_time = Time.current
     grouped_events = events.group_by { |e| e['repo']['name'] }
     
-    Rails.logger.info "[GHArchive] Processing #{grouped_events.size} repositories"
+    Rails.logger.info "[GHArchive] Processing #{events.size} events from #{grouped_events.size} repositories"
     
+    # First, ensure all repositories exist by batch upserting them
+    repository_names = grouped_events.keys
+    repositories = batch_upsert_repositories(repository_names)
+    
+    # Collect all issues data for bulk upsert
+    all_issues_data = []
+    processed_repos = 0
+    
+    Rails.logger.info "[GHArchive] Processing events from each repository..."
     grouped_events.each do |repo_name, repo_events|
-      process_repository_events(repo_name, repo_events)
-    end
-  end
-
-  def process_repository_events(repo_name, events)
-    repository = find_or_create_repository(repo_name)
-    return unless repository
-    
-    # Track this repository as affected
-    @affected_repository_ids << repository.id
-    
-    issues_data = []
-    
-    events.each do |event|
-      case event['type']
-      when 'IssuesEvent'
-        issue_data = map_issue_event(event, repository)
-        issues_data << issue_data if issue_data
-      when 'PullRequestEvent'
-        pr_data = map_pull_request_event(event, repository)
-        issues_data << pr_data if pr_data
+      repository = repositories[repo_name]
+      unless repository
+        Rails.logger.warn "[GHArchive] Repository #{repo_name} not found after upsert, skipping #{repo_events.size} events"
+        next
+      end
+      
+      # Track this repository as affected
+      @affected_repository_ids << repository.id
+      
+      repo_issues = 0
+      repo_prs = 0
+      
+      repo_events.each do |event|
+        case event['type']
+        when 'IssuesEvent'
+          issue_data = map_issue_event(event, repository)
+          if issue_data
+            all_issues_data << issue_data
+            repo_issues += 1
+          end
+        when 'PullRequestEvent'
+          pr_data = map_pull_request_event(event, repository)
+          if pr_data
+            all_issues_data << pr_data
+            repo_prs += 1
+          end
+        end
+      end
+      
+      processed_repos += 1
+      if processed_repos % 100 == 0 || processed_repos == grouped_events.size
+        Rails.logger.info "[GHArchive] Processed #{processed_repos}/#{grouped_events.size} repositories (#{repo_name}: #{repo_issues} issues, #{repo_prs} PRs)"
       end
     end
     
-    if issues_data.any?
-      Rails.logger.info "[GHArchive] Processing #{issues_data.size} issues for #{repo_name}"
-      bulk_upsert_issues(issues_data.compact)
+    # Bulk upsert all issues at once
+    if all_issues_data.any?
+      Rails.logger.info "[GHArchive] Bulk upserting #{all_issues_data.size} issues across all repositories"
+      bulk_upsert_issues(all_issues_data.compact)
+    else
+      Rails.logger.info "[GHArchive] No issues or PRs to upsert"
     end
+    
+    process_elapsed_time = Time.current - process_start_time
+    Rails.logger.info "[GHArchive] Event processing completed in #{process_elapsed_time.round(2)}s"
+  end
+
+
+  def batch_upsert_repositories(repository_names)
+    start_time = Time.current
+    Rails.logger.info "[GHArchive] Batch upserting #{repository_names.size} repositories"
+    
+    # Build repository data for upsert
+    repositories_data = repository_names.map do |repo_name|
+      owner, name = repo_name.split('/')
+      next if owner.blank? || name.blank?
+      
+      {
+        host_id: @host.id,
+        full_name: repo_name,
+        owner: owner,
+        created_at: Time.current,
+        updated_at: Time.current
+      }
+    end.compact
+    
+    Rails.logger.info "[GHArchive] Built #{repositories_data.size} valid repository records for upsert"
+    
+    # Perform batch upsert
+    Rails.logger.info "[GHArchive] Executing repository upsert..."
+    Repository.upsert_all(
+      repositories_data,
+      unique_by: :index_repositories_on_host_id_lower_full_name,
+      update_only: [:updated_at],
+      record_timestamps: false
+    )
+    
+    # Return hash of repo_name => repository object
+    Rails.logger.info "[GHArchive] Querying for upserted repositories..."
+    result = Repository.where(host: @host, full_name: repository_names)
+                      .index_by(&:full_name)
+    
+    elapsed_time = Time.current - start_time
+    Rails.logger.info "[GHArchive] Repository upsert completed in #{elapsed_time.round(2)}s: #{result.size} repositories ready"
+    
+    result
+  rescue => e
+    Rails.logger.error "[GHArchive] Failed to batch upsert repositories: #{e.message}"
+    {}
   end
 
   def find_or_create_repository(repo_name)
@@ -237,29 +353,51 @@ class GharchiveImporter
   def bulk_upsert_issues(issues_data)
     return if issues_data.empty?
     
+    upsert_start_time = Time.current
     Rails.logger.info "[GHArchive] Attempting to upsert #{issues_data.size} issues"
-    Rails.logger.debug "[GHArchive] First issue data: #{issues_data.first.inspect}"
     
     # Remove duplicate uuids to avoid constraint violations
+    dedup_start_time = Time.current
     issues_data = issues_data.reverse.uniq { |d| d[:uuid] }.reverse
+    dedup_elapsed = Time.current - dedup_start_time
+    Rails.logger.info "[GHArchive] After deduplication: #{issues_data.size} issues (took #{dedup_elapsed.round(2)}s)"
     
     # Count issues vs PRs
     issue_count = issues_data.count { |d| !d[:pull_request] }
     pr_count = issues_data.count { |d| d[:pull_request] }
+    Rails.logger.info "[GHArchive] Content breakdown: #{issue_count} issues, #{pr_count} PRs"
     
-    # Get existing issue UUIDs to track created vs updated
-    existing_uuids = Issue.where(host_id: @host.id, uuid: issues_data.map { |d| d[:uuid] }).pluck(:uuid)
+    # Get existing issue UUIDs to track created vs updated (batch query)
+    lookup_start_time = Time.current
+    uuids = issues_data.map { |d| d[:uuid] }
+    existing_uuids = Set.new(Issue.where(host_id: @host.id, uuid: uuids).pluck(:uuid).map(&:to_s))
+    lookup_elapsed = Time.current - lookup_start_time
+    
     created_count = issues_data.count { |d| !existing_uuids.include?(d[:uuid].to_s) }
     updated_count = issues_data.count - created_count
+    Rails.logger.info "[GHArchive] Existing records lookup: #{created_count} new, #{updated_count} updates (took #{lookup_elapsed.round(2)}s)"
     
-    result = Issue.upsert_all(
-      issues_data,
-      unique_by: [:host_id, :uuid],
-      update_only: [:repository_id, :number, :state, :title, :locked, :comments_count, 
-                    :user, :author_association, :created_at, :updated_at, :closed_at, :merged_at, 
-                    :labels, :assignees, :time_to_close],
-      record_timestamps: false
-    )
+    # Process in batches to avoid memory issues with large datasets
+    batch_size = 1000
+    total_batches = (issues_data.size / batch_size.to_f).ceil
+    Rails.logger.info "[GHArchive] Processing #{total_batches} batches of #{batch_size} issues each"
+    
+    issues_data.each_slice(batch_size).with_index do |batch, index|
+      batch_start_time = Time.current
+      Rails.logger.info "[GHArchive] Processing batch #{index + 1}/#{total_batches} (#{batch.size} issues)"
+      
+      Issue.upsert_all(
+        batch,
+        unique_by: [:host_id, :uuid],
+        update_only: [:repository_id, :number, :state, :title, :locked, :comments_count, 
+                      :user, :author_association, :created_at, :updated_at, :closed_at, :merged_at, 
+                      :labels, :assignees, :time_to_close],
+        record_timestamps: false
+      )
+      
+      batch_elapsed = Time.current - batch_start_time
+      Rails.logger.info "[GHArchive] Batch #{index + 1} completed in #{batch_elapsed.round(2)}s"
+    end
     
     # Update stats
     @import_stats[:issues_count] += issue_count
@@ -267,34 +405,51 @@ class GharchiveImporter
     @import_stats[:created_count] += created_count
     @import_stats[:updated_count] += updated_count
     
-    Rails.logger.info "[GHArchive] Upserted #{issues_data.size} issues successfully (#{created_count} created, #{updated_count} updated)"
+    upsert_elapsed = Time.current - upsert_start_time
+    Rails.logger.info "[GHArchive] Upserted #{issues_data.size} issues successfully in #{upsert_elapsed.round(2)}s (#{created_count} created, #{updated_count} updated)"
   rescue => e
     Rails.logger.error "[GHArchive] Bulk upsert failed: #{e.message}"
     Rails.logger.error "[GHArchive] Backtrace: #{e.backtrace.first(5).join("\n")}"
   end
 
   def update_repository_and_host_counts
+    counts_start_time = Time.current
     Rails.logger.info "[GHArchive] Updating counts for #{@affected_repository_ids.size} repositories"
     
     # Update repository counts
+    updated_repos = 0
+    failed_repos = 0
+    
     Repository.where(id: @affected_repository_ids.to_a).find_each do |repository|
       begin
+        repo_start_time = Time.current
         repository.update_issue_counts
-        Rails.logger.info "[GHArchive] Updated counts for repository #{repository.full_name}"
+        repo_elapsed = Time.current - repo_start_time
+        updated_repos += 1
+        
+        if updated_repos % 50 == 0 || updated_repos == @affected_repository_ids.size
+          Rails.logger.info "[GHArchive] Updated counts for #{updated_repos}/#{@affected_repository_ids.size} repositories (#{repository.full_name} took #{repo_elapsed.round(2)}s)"
+        end
       rescue => e
+        failed_repos += 1
         Rails.logger.error "[GHArchive] Failed to update counts for repository #{repository.full_name}: #{e.message}"
       end
     end
     
     # Update host counts
     begin
+      host_start_time = Time.current
       @host.update_counts
-      Rails.logger.info "[GHArchive] Updated counts for host #{@host.name}"
+      host_elapsed = Time.current - host_start_time
+      Rails.logger.info "[GHArchive] Updated counts for host #{@host.name} in #{host_elapsed.round(2)}s"
     rescue => e
       Rails.logger.error "[GHArchive] Failed to update host counts: #{e.message}"
     end
     
     # Clear the affected repositories set
     @affected_repository_ids.clear
+    
+    counts_elapsed = Time.current - counts_start_time
+    Rails.logger.info "[GHArchive] Count updates completed in #{counts_elapsed.round(2)}s (#{updated_repos} successful, #{failed_repos} failed)"
   end
 end
