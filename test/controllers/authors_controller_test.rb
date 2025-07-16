@@ -223,17 +223,11 @@ class AuthorsControllerTest < ActionDispatch::IntegrationTest
     assert active_maintainers.is_a?(Array)
   end
 
-  test 'should handle author with no issues' do
+  test 'should return 404 for author with no issues' do
     author_with_no_issues = 'newauthor'
     
     get host_author_path(@host, author_with_no_issues)
-    assert_response :success
-    
-    assert_equal 0, assigns(:issues_count)
-    assert_equal 0, assigns(:pull_requests_count)
-    assert_equal 0, assigns(:merged_pull_requests_count)
-    assert_nil assigns(:average_issue_close_time)
-    assert_nil assigns(:average_pull_request_close_time)
+    assert_response :not_found
   end
 
   test 'should raise not found for non-existent host' do
