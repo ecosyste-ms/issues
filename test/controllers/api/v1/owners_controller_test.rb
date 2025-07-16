@@ -76,6 +76,10 @@ class Api::V1::OwnersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'show includes repository breakdowns' do
+    # Create issues in the main repository
+    create_issue(@repository, user: 'contributor1', number: 100)
+    create_pull_request(@repository, user: 'contributor2', number: 101)
+    
     # Create another repository for the same owner
     other_repo = create_repository(@host, full_name: "#{@owner}/other-repo", owner: @owner)
     create_issue(other_repo, user: 'contributor3', number: 200)

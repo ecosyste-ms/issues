@@ -48,6 +48,10 @@ class Host < ApplicationRecord
     name.downcase != kind
   end
 
+  def hidden?
+    repositories_count == 0
+  end
+
   def sync_repository_async(full_name, remote_ip = '0.0.0.0', priority = false)
     repo = self.repositories.find_by('lower(full_name) = ?', full_name.downcase)
     repo = self.repositories.create(full_name: full_name) if repo.nil?
