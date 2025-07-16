@@ -11,6 +11,5 @@ class ImportsController < ApplicationController
       recent_created: Import.where('created_at > ?', 24.hours.ago).where(success: true).sum(:created_count),
       recent_updated: Import.where('created_at > ?', 24.hours.ago).where(success: true).sum(:updated_count)
     }
-    fresh_when(@imports, public: true)
   end
 end
