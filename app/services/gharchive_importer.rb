@@ -240,6 +240,9 @@ class GharchiveImporter
     Rails.logger.info "[GHArchive] Attempting to upsert #{issues_data.size} issues"
     Rails.logger.debug "[GHArchive] First issue data: #{issues_data.first.inspect}"
     
+    # Remove duplicate uuids to avoid constraint violations
+    issues_data = issues_data.reverse.uniq { |d| d[:uuid] }.reverse
+    
     # Count issues vs PRs
     issue_count = issues_data.count { |d| !d[:pull_request] }
     pr_count = issues_data.count { |d| d[:pull_request] }
