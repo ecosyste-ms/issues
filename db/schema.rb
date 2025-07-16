@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_15_084553) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_16_115125) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -73,6 +73,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_15_084553) do
     t.datetime "merged_at"
     t.integer "host_id"
     t.index ["host_id", "user"], name: "index_issues_on_host_id_and_user"
+    t.index ["host_id", "uuid"], name: "index_issues_on_host_id_and_uuid", unique: true
     t.index ["repository_id"], name: "index_issues_on_repository_id"
   end
 
