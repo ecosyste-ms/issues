@@ -48,13 +48,30 @@ namespace :hosts do
         puts "  Updated #{target_host.name} to #{downcase_name}"
       end
       
-      # Move all repositories from other hosts to the target host
+      # Move repositories from other hosts to the target host
       hosts.each do |host|
         next if host == target_host
         
-        puts "  Moving #{host.repositories.count} repositories from #{host.name} to #{target_host.name}"
-        host.repositories.update_all(host_id: target_host.id)
-        host.issues.update_all(host_id: target_host.id)
+        puts "  Processing #{host.repositories.count} repositories from #{host.name} to #{target_host.name}"
+        
+        host.repositories.find_each do |repo|
+          # Check if target host already has this repository (case-insensitive)
+          existing_repo = target_host.repositories.find_by('lower(full_name) = ?', repo.full_name.downcase)
+          
+          if existing_repo
+            puts "    Repository #{repo.full_name} already exists on #{target_host.name}, merging issues..."
+            # Move issues from the duplicate repo to the existing one
+            repo.issues.update_all(repository_id: existing_repo.id, host_id: target_host.id)
+            # Update the existing repo with the latest sync time if newer
+            if repo.last_synced_at && (existing_repo.last_synced_at.nil? || repo.last_synced_at > existing_repo.last_synced_at)
+              existing_repo.update!(last_synced_at: repo.last_synced_at)
+            end
+          else
+            # No conflict, move the repository
+            repo.update!(host_id: target_host.id)
+            repo.issues.update_all(host_id: target_host.id)
+          end
+        end
       end
       
       # Update counts for the target host
@@ -78,11 +95,21 @@ namespace :hosts do
       hosts.each do |host|
         next if host == target_host
         
+        # Clean up any remaining repositories that might be empty
+        empty_repos = host.repositories.where(issues_count: 0).or(host.repositories.where(issues_count: nil))
+        if empty_repos.any?
+          puts "  Removing #{empty_repos.count} empty repositories from #{host.name}"
+          empty_repos.destroy_all
+        end
+        
         if host.repositories.count == 0 && host.issues.count == 0
           puts "  Removing empty host: #{host.name}"
           host.destroy
         else
-          puts "  WARNING: Host #{host.name} still has data - skipping removal"
+          puts "  WARNING: Host #{host.name} still has #{host.repositories.count} repositories and #{host.issues.count} issues - skipping removal"
+          host.repositories.find_each do |repo|
+            puts "    Repository: #{repo.full_name} (#{repo.issues.count} issues)"
+          end
         end
       end
     end
