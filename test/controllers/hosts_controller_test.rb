@@ -227,4 +227,48 @@ class HostsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil repositories
     assert_empty repositories
   end
+
+  test 'should redirect incorrectly cased host names' do
+    # Create host with proper case
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org', repositories_count: 10)
+    
+    # Request with incorrect case
+    get host_path('Codeberg.org')
+    
+    # Should redirect to correct case
+    assert_response :moved_permanently
+    assert_redirected_to host_path('codeberg.org')
+  end
+
+  test 'should redirect uppercase host names' do
+    # Create host with proper case
+    proper_host = create_host(name: 'gitea.com', url: 'https://gitea.com', repositories_count: 5)
+    
+    # Request with uppercase
+    get host_path('GITEA.COM')
+    
+    # Should redirect to correct case
+    assert_response :moved_permanently
+    assert_redirected_to host_path('gitea.com')
+  end
+
+  test 'should show exact match without redirect' do
+    # Create host with exact case
+    exact_host = create_host(name: 'ExactCase', url: 'https://exactcase.com', repositories_count: 100)
+    
+    # Request with exact case
+    get host_path('ExactCase')
+    
+    # Should show directly without redirect
+    assert_response :success
+    assert_equal exact_host, assigns(:host)
+  end
+
+  test 'should raise not found for non-existent host even with case variations' do
+    # Request completely non-existent host
+    get host_path('nonexistent.example.com')
+    
+    # Should raise not found
+    assert_response :not_found
+  end
 end
