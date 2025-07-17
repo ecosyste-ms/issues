@@ -23,7 +23,7 @@ namespace :hosts do
       duplicates.each do |downcase_name, hosts|
         puts "  #{downcase_name}:"
         hosts.each do |host|
-          puts "    - #{host.name} (#{host.repositories.count} repos)"
+          puts "    - #{host.name} (#{host.repositories.count} repos, #{host.issues.count} issues)"
         end
       end
     end
