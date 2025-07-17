@@ -116,4 +116,41 @@ namespace :hosts do
     
     puts "Cleanup complete."
   end
+
+  desc 'force cleanup duplicate hosts'
+  task force_cleanup: :environment do
+    puts "Force cleaning up duplicate hosts..."
+    
+    hosts_by_downcase = Host.all.group_by { |host| host.name.downcase }
+    duplicates = hosts_by_downcase.select { |_, hosts| hosts.length > 1 }
+    
+    duplicates.each do |downcase_name, hosts|
+      puts "Processing #{downcase_name}..."
+      
+      target_host = hosts.find { |h| h.name == downcase_name } || hosts.first
+      target_host.update!(name: downcase_name) if target_host.name != downcase_name
+      
+      hosts.each do |host|
+        next if host == target_host
+        
+        puts "  Force removing #{host.name} (#{host.repositories.count} repos, #{host.issues.count} issues)"
+        
+        # Delete all repositories (they should be duplicates on target host)
+        host.repositories.destroy_all
+        
+        # Move any remaining issues to target host
+        host.issues.update_all(host_id: target_host.id)
+        
+        # Now remove the empty host
+        host.destroy
+        puts "  Removed #{host.name}"
+      end
+      
+      # Update counts for target host
+      target_host.update_counts
+      puts "  Updated counts for #{target_host.name}"
+    end
+    
+    puts "Force cleanup complete."
+  end
 end
