@@ -1,13 +1,17 @@
 class OwnersController < ApplicationController
+  include HostRedirect
+  
   def index
-    @host = Host.find_by!(name: params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
     @scope = @host.repositories.where.not(owner: nil).group(:owner).count.sort_by{|k,v| -v }
     @pagy, @owners = pagy_array(@scope)
     expires_in 1.day, public: true
   end
 
   def show
-    @host = Host.find_by!(name: params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
     @owner = params[:id]
 
     @issues_count = @host.issues.owner(@owner).where(pull_request: false).count

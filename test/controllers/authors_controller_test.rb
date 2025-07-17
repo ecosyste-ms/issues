@@ -234,4 +234,47 @@ class AuthorsControllerTest < ActionDispatch::IntegrationTest
     get host_author_path('nonexistent', @author)
     assert_response :not_found
   end
+
+  test 'should redirect incorrectly cased host in author show' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    author = 'testauthor'
+    create_issue(create_repository(proper_host, full_name: 'test/repo'), user: author)
+    
+    get host_author_path('Codeberg.org', author)
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_author_path('codeberg.org', author)
+  end
+
+  test 'should redirect uppercase host in author show' do
+    proper_host = create_host(name: 'gitea.com', url: 'https://gitea.com')
+    author = 'testauthor'
+    create_issue(create_repository(proper_host, full_name: 'test/repo'), user: author)
+    
+    get host_author_path('GITEA.COM', author)
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_author_path('gitea.com', author)
+  end
+
+  test 'should redirect incorrectly cased host in authors index' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    
+    get host_authors_path('Codeberg.org')
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_authors_path('codeberg.org')
+  end
+
+  test 'should show author with exact host match without redirect' do
+    proper_host = create_host(name: 'exact.host', url: 'https://exact.host')
+    author = 'testauthor'
+    create_issue(create_repository(proper_host, full_name: 'test/repo'), user: author)
+    
+    get host_author_path('exact.host', author)
+    
+    assert_response :success
+    assert_equal proper_host, assigns(:host)
+    assert_equal author, assigns(:author)
+  end
 end

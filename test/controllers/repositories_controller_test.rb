@@ -138,4 +138,50 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to host_repository_path(@host, @repository)
   end
 
+  test 'should redirect incorrectly cased host in repository show' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    repo = create_repository(proper_host, full_name: 'desour/doublejump', owner: 'desour')
+    
+    get host_repository_path('Codeberg.org', repo.full_name)
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_repository_path('codeberg.org', repo.full_name)
+  end
+
+  test 'should redirect uppercase host in repository show' do
+    proper_host = create_host(name: 'gitea.com', url: 'https://gitea.com')
+    repo = create_repository(proper_host, full_name: 'test/repo', owner: 'test')
+    
+    get host_repository_path('GITEA.COM', repo.full_name)
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_repository_path('gitea.com', repo.full_name)
+  end
+
+  test 'should show repository with exact host match without redirect' do
+    proper_host = create_host(name: 'exact.host', url: 'https://exact.host')
+    repo = create_repository(proper_host, full_name: 'test/repo', owner: 'test')
+    
+    get host_repository_path('exact.host', repo.full_name)
+    
+    assert_response :success
+    assert_equal proper_host, assigns(:host)
+    assert_equal repo, assigns(:repository)
+  end
+
+  test 'should redirect incorrectly cased host in repository index' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    
+    get host_repositories_path('Codeberg.org')
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_path('codeberg.org')
+  end
+
+  test 'should raise not found for non-existent host in repository routes' do
+    get host_repository_path('nonexistent.example.com', 'test/repo')
+    
+    assert_response :not_found
+  end
+
 end

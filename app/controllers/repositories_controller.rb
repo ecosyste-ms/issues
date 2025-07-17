@@ -1,4 +1,5 @@
 class RepositoriesController < ApplicationController
+  include HostRedirect
   def lookup
     url = params[:url]
     priority = params[:priority].present?
@@ -22,12 +23,15 @@ class RepositoriesController < ApplicationController
   end
 
   def index
-    @host = Host.find_by_name!(params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
     redirect_to host_path(@host)
   end
 
   def show
-    @host = Host.find_by_name!(params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
+    
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
     fresh_when(@repository, public: true)
     if @repository.nil?
@@ -41,7 +45,9 @@ class RepositoriesController < ApplicationController
   end
 
   def charts
-    @host = Host.find_by_name!(params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
+    
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
     @period = (params[:period].presence || 'month')
     @exclude_bots = params[:exclude_bots].present?
@@ -69,7 +75,9 @@ class RepositoriesController < ApplicationController
   end
 
   def chart_data
-    @host = Host.find_by_name!(params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
+    
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
     
     period = (params[:period].presence || 'month').to_sym

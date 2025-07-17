@@ -308,4 +308,47 @@ class OwnersControllerTest < ActionDispatch::IntegrationTest
     get host_owner_path('nonexistent', @owner)
     assert_response :not_found
   end
+
+  test 'should redirect incorrectly cased host in owner show' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    owner = 'testowner'
+    create_repository(proper_host, full_name: "#{owner}/testrepo", owner: owner)
+    
+    get host_owner_path('Codeberg.org', owner)
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_owner_path('codeberg.org', owner)
+  end
+
+  test 'should redirect uppercase host in owner show' do
+    proper_host = create_host(name: 'gitea.com', url: 'https://gitea.com')
+    owner = 'testowner'
+    create_repository(proper_host, full_name: "#{owner}/testrepo", owner: owner)
+    
+    get host_owner_path('GITEA.COM', owner)
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_owner_path('gitea.com', owner)
+  end
+
+  test 'should redirect incorrectly cased host in owners index' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    
+    get host_owners_path('Codeberg.org')
+    
+    assert_response :moved_permanently
+    assert_redirected_to host_owners_path('codeberg.org')
+  end
+
+  test 'should show owner with exact host match without redirect' do
+    proper_host = create_host(name: 'exact.host', url: 'https://exact.host')
+    owner = 'testowner'
+    create_repository(proper_host, full_name: "#{owner}/testrepo", owner: owner)
+    
+    get host_owner_path('exact.host', owner)
+    
+    assert_response :success
+    assert_equal proper_host, assigns(:host)
+    assert_equal owner, assigns(:owner)
+  end
 end
