@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :host do
-    sequence(:name) { |n| "Host#{n}" }
-    url { "https://#{name.downcase}.com" }
+    sequence(:name) { |n| "host#{n}.com" }
+    url { "https://#{name}" }
     kind { 'github' }
     repositories_count { 100 }
     issues_count { 500 }

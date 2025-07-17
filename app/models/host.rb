@@ -2,7 +2,7 @@ class Host < ApplicationRecord
   has_many :repositories
   has_many :issues
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { case_sensitive: false }
   validates :url, presence: true
   validates :kind, presence: true
 
@@ -96,12 +96,27 @@ class Host < ApplicationRecord
     json = response.body
 
     json.each do |host|
-      Host.find_or_create_by(name: host['name']).tap do |r|
-        r.url = host['url']
-        r.kind = host['kind']
-        r.icon_url = host['icon_url']
-        r.last_synced_at = Time.now
-        r.save
+      # Find existing host case-insensitively
+      existing_host = Host.find_by('LOWER(name) = ?', host['name'].downcase)
+      
+      if existing_host
+        # Update existing host but preserve its name
+        existing_host.tap do |r|
+          r.url = host['url']
+          r.kind = host['kind']
+          r.icon_url = host['icon_url']
+          r.last_synced_at = Time.now
+          r.save
+        end
+      else
+        # Create new host with original name
+        Host.create!(
+          name: host['name'],
+          url: host['url'],
+          kind: host['kind'],
+          icon_url: host['icon_url'],
+          last_synced_at: Time.now
+        )
       end
     end
   end
