@@ -1,6 +1,9 @@
 class Api::V1::AuthorsController < Api::V1::ApplicationController
+  include HostRedirect
+  
   def show
-    @host = Host.find_by!(name: params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
     @author = params[:id]
 
     @issues_count = @host.issues.where(user: params[:id], pull_request: false).count
@@ -28,7 +31,8 @@ class Api::V1::AuthorsController < Api::V1::ApplicationController
   end
 
   def index
-    @host = Host.find_by!(name: params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
     @scope = @host.issues.group(:user).count.sort_by{|k,v| -v }
     @pagy, @authors = pagy_array(@scope)
     expires_in 1.day, public: true

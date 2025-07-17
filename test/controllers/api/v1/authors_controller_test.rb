@@ -159,4 +159,24 @@ class Api::V1::AuthorsControllerTest < ActionDispatch::IntegrationTest
     assert_match(/max-age=86400/, response.headers['Cache-Control'])
     assert_match(/public/, response.headers['Cache-Control'])
   end
+
+  test 'should redirect incorrectly cased host in API author show' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    author = 'testauthor'
+    create_issue(create_repository(proper_host, full_name: 'test/repo'), user: author)
+    
+    get api_v1_host_author_path('Codeberg.org', author), as: :json
+    
+    assert_response :moved_permanently
+    assert_redirected_to api_v1_host_author_path('codeberg.org', author)
+  end
+
+  test 'should redirect incorrectly cased host in API authors index' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    
+    get api_v1_host_authors_path('Codeberg.org'), as: :json
+    
+    assert_response :moved_permanently
+    assert_redirected_to api_v1_host_authors_path('codeberg.org')
+  end
 end

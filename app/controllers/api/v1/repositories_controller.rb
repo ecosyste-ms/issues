@@ -1,7 +1,9 @@
 class Api::V1::RepositoriesController < Api::V1::ApplicationController
+  include HostRedirect
 
   def index
-    @host = Host.find_by_name!(params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
     scope = @host.repositories.visible.order('last_synced_at DESC').includes(:host)
     scope = scope.created_after(params[:created_after]) if params[:created_after].present?
     scope = scope.updated_after(params[:updated_after]) if params[:updated_after].present?
@@ -37,7 +39,8 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
   end
 
   def show
-    @host = Host.find_by_name!(params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
     fresh_when @repository, public: true
     @maintainers = @repository.issues.maintainers.group(:user).count.sort_by{|k,v| -v }
@@ -45,7 +48,8 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
   end
 
   def ping
-    @host = Host.find_by_name!(params[:host_id])
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
     priority = params[:priority].present?
     if @repository

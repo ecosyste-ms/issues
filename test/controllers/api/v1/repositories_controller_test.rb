@@ -249,4 +249,33 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
     get api_v1_host_repository_path(@host, @repository), headers: { 'If-None-Match': etag }
     assert_response :not_modified
   end
+
+  test 'should redirect incorrectly cased host in API repository show' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    repo = create_repository(proper_host, full_name: 'desour/doublejump', owner: 'desour')
+    
+    get api_v1_host_repository_path('Codeberg.org', repo.full_name), as: :json
+    
+    assert_response :moved_permanently
+    assert_redirected_to api_v1_host_repository_path('codeberg.org', repo.full_name)
+  end
+
+  test 'should redirect uppercase host in API repository show' do
+    proper_host = create_host(name: 'gitea.com', url: 'https://gitea.com')
+    repo = create_repository(proper_host, full_name: 'test/repo', owner: 'test')
+    
+    get api_v1_host_repository_path('GITEA.COM', repo.full_name), as: :json
+    
+    assert_response :moved_permanently
+    assert_redirected_to api_v1_host_repository_path('gitea.com', repo.full_name)
+  end
+
+  test 'should redirect incorrectly cased host in API repository index' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    
+    get api_v1_host_repositories_path('Codeberg.org'), as: :json
+    
+    assert_response :moved_permanently
+    assert_redirected_to api_v1_host_path('codeberg.org')
+  end
 end

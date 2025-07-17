@@ -101,4 +101,31 @@ class Api::V1::HostsControllerTest < ActionDispatch::IntegrationTest
     get api_v1_host_path(@host), headers: { 'If-None-Match': etag }, as: :json
     assert_response :not_modified
   end
+
+  test 'should redirect incorrectly cased host in API' do
+    proper_host = create_host(name: 'codeberg.org', url: 'https://codeberg.org')
+    
+    get api_v1_host_path('Codeberg.org'), as: :json
+    
+    assert_response :moved_permanently
+    assert_redirected_to api_v1_host_path('codeberg.org')
+  end
+
+  test 'should redirect uppercase host in API' do
+    proper_host = create_host(name: 'gitea.com', url: 'https://gitea.com')
+    
+    get api_v1_host_path('GITEA.COM'), as: :json
+    
+    assert_response :moved_permanently
+    assert_redirected_to api_v1_host_path('gitea.com')
+  end
+
+  test 'should show host with exact match without redirect' do
+    proper_host = create_host(name: 'exact.host', url: 'https://exact.host')
+    
+    get api_v1_host_path('exact.host'), as: :json
+    
+    assert_response :success
+    assert_equal proper_host, assigns(:host)
+  end
 end
