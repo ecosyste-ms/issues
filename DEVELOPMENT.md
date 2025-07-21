@@ -6,7 +6,7 @@ First things first, you'll need to fork and clone the repository to your local m
 
 `git clone https://github.com/ecosyste-ms/issues.git`
 
-The project uses ruby on rails which have a number of system dependencies you'll need to install. 
+The project uses ruby on rails which have a number of system dependencies you'll need to install.
 
 - [ruby](https://www.ruby-lang.org/en/documentation/installation/)
 - [postgresql 14](https://www.postgresql.org/download/)
@@ -14,7 +14,7 @@ The project uses ruby on rails which have a number of system dependencies you'll
 
 Once you've got all of those installed, from the root directory of the project run the following commands:
 
-```
+```bash
 bundle install
 bundle exec rake db:create
 bundle exec rake db:migrate
@@ -39,7 +39,7 @@ For access the rails console use the following command:
 
 Runing rake tasks in docker follows a similar pattern:
 
-`docker-compose exec app rake issues:sync`
+`docker-compose exec app rake gharchive:import_recent`
 
 ## Importing data
 
@@ -47,9 +47,13 @@ The default set of supported data sources are listed in [db/seeds.rb](db/seeds.r
 
 `rake db:seed`
 
-You can then start syncing data for each source with the following command, this may take a while:
+You can then start importing recent GitHub data with the following commands:
 
-`rake issues:sync`
+```bash
+rake hosts:sync_all            # Sync all hosts
+rake gharchive:import_recent    # Import last 24 hours of GitHub data
+rake repositories:sync_least_recent  # Sync repositories
+```
 
 ## Tests
 
