@@ -52,7 +52,37 @@ class Host < ApplicationRecord
     repositories_count == 0
   end
 
+  def online?
+    status == 'online'
+  end
+
+  def can_be_indexed?
+    return true if status.blank? # Allow indexing for hosts without status info yet
+    online? && (can_crawl_api.nil? || can_crawl_api)
+  end
+
+  def status_display
+    case status
+    when 'online'
+      'Online'
+    when 'timeout'
+      'Timeout'
+    when 'connection_failed'
+      'Connection Failed'
+    when 'http_error'
+      'HTTP Error'
+    when 'ssl_error'
+      'SSL Error'
+    when 'error'
+      'Error'
+    else
+      'Unknown'
+    end
+  end
+
   def sync_repository_async(full_name, remote_ip = '0.0.0.0', priority = false)
+    return nil unless can_be_indexed?
+    
     repo = self.repositories.find_by('lower(full_name) = ?', full_name.downcase)
     repo = self.repositories.create(full_name: full_name) if repo.nil?
     
@@ -64,6 +94,8 @@ class Host < ApplicationRecord
   end
 
   def sync_recently_updated_repositories_async
+    return nil unless can_be_indexed?
+    
     conn = EcosystemsApiClient.client('https://repos.ecosyste.ms')
     
     response = conn.get('/api/v1/hosts/' + name + '/repositories')
@@ -105,6 +137,16 @@ class Host < ApplicationRecord
           r.url = host['url']
           r.kind = host['kind']
           r.icon_url = host['icon_url']
+          r.owners_count = host['owners_count']
+          r.status = host['status']
+          r.online = host['online']
+          r.status_checked_at = host['status_checked_at']
+          r.response_time = host['response_time']
+          r.last_error = host['last_error']
+          r.can_crawl_api = host['can_crawl_api']
+          r.host_url = host['host_url']
+          r.repositories_url = host['repositories_url']
+          r.owners_url = host['owners_url']
           r.last_synced_at = Time.now
           r.save
         end
@@ -115,6 +157,16 @@ class Host < ApplicationRecord
           url: host['url'],
           kind: host['kind'],
           icon_url: host['icon_url'],
+          owners_count: host['owners_count'],
+          status: host['status'],
+          online: host['online'],
+          status_checked_at: host['status_checked_at'],
+          response_time: host['response_time'],
+          last_error: host['last_error'],
+          can_crawl_api: host['can_crawl_api'],
+          host_url: host['host_url'],
+          repositories_url: host['repositories_url'],
+          owners_url: host['owners_url'],
           last_synced_at: Time.now
         )
       end

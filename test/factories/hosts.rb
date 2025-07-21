@@ -7,6 +7,9 @@ FactoryBot.define do
     issues_count { 500 }
     pull_requests_count { 200 }
     authors_count { 50 }
+    status { 'online' }
+    online { true }
+    can_crawl_api { true }
     
     trait :github do
       name { 'GitHub' }

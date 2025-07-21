@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_17_151219) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_21_144252) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -35,6 +35,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_17_151219) do
     t.integer "issues_count"
     t.integer "pull_requests_count"
     t.integer "authors_count"
+    t.integer "owners_count"
+    t.string "status"
+    t.boolean "online"
+    t.datetime "status_checked_at"
+    t.integer "response_time"
+    t.text "last_error"
+    t.boolean "can_crawl_api"
+    t.string "host_url"
+    t.string "repositories_url"
+    t.string "owners_url"
     t.index "lower((name)::text)", name: "index_hosts_on_lower_name", unique: true
   end
 

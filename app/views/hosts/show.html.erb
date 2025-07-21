@@ -4,6 +4,14 @@
 <div class="container-sm">
   <h1 class='mb-4'>
     <%= link_to @host, @host.url, target: :_blank %>
+    <% if @host.status.present? %>
+      <span class="badge <%= @host.online? ? 'bg-success' : 'bg-warning' %>">
+        <%= @host.status_display %>
+      </span>
+      <% unless @host.can_crawl_api %>
+        <span class="badge bg-secondary">API Blocked</span>
+      <% end %>
+    <% end %>
   </h1>
 
   <ul class="nav nav-tabs my-3">
@@ -25,6 +33,18 @@
     </li>
     <%= render 'sort' %>
   </ul>
+
+  <% if @host.status.present? && !@host.online? %>
+    <div class="alert alert-warning" role="alert">
+      <strong>Host Status:</strong> <%= @host.status_display %>
+      <% if @host.last_error.present? %>
+        <br><small><%= @host.last_error %></small>
+      <% end %>
+      <% if @host.status_checked_at.present? %>
+        <br><small>Last checked: <%= time_ago_in_words(@host.status_checked_at) %> ago</small>
+      <% end %>
+    </div>
+  <% end %>
 
   <%= render @repositories %>
   <%== pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>  

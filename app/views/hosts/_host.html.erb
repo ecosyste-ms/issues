@@ -18,7 +18,15 @@
           <%= number_with_delimiter host.repositories_count %> repositories<br>
           <%= number_with_delimiter host.issues_count %> issues<br>
           <%= number_with_delimiter host.pull_requests_count %> pull requests<br>
-          <%= number_with_delimiter host.authors_count %> authors
+          <%= number_with_delimiter host.authors_count %> authors<br>
+          <% if host.status.present? %>
+            <span class="badge <%= host.online? ? 'bg-success' : 'bg-warning' %>">
+              <%= host.status_display %>
+            </span>
+            <% unless host.can_crawl_api %>
+              <span class="badge bg-secondary">API Blocked</span>
+            <% end %>
+          <% end %>
         </p>
       </div>
       <div class="flex-shrink-0">
