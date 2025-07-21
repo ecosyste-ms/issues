@@ -1,28 +1,7 @@
-<div class="col-lg-4 container-sm text-center">
-  <form class="row g-2 justify-content-center" action='<%= lookup_repositories_path %>' method="get">
-    <div class="col-auto">
-      <label for="repo_name" class="visually-hidden">Tarball URL</label>
-      <input name='url' type="text" class="form-control" id="url" placeholder="URL: eg https://github.com/ecosyste-ms/packages" size="50">
-    </div>
-    <div class="col-auto">
-      <button type="submit" class="btn btn-primary mb-3">Parse</button>
-    </div>
-  </form>
-</div>
-
 <div class="container-sm">
   <h2 class='mb-3'>
-    Repositories indexed: <%= number_with_delimiter @hosts.sum(&:repositories_count) %> -
-    Issues counted: <%= number_with_delimiter @hosts.sum(&:issues_count) %> -
-    Pull requests counted: <%= number_with_delimiter @hosts.sum(&:pull_requests_count) %>
+    Hosts
   </h2>
 
   <%= render @hosts %>
-
-  <h2 class='my-4'>
-    Recently scanned repositories
-  </h2>
-  
-  <%= render @repositories %>
-  <%== pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>  
 </div>

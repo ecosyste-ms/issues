@@ -1,10 +1,6 @@
 class HostsController < ApplicationController
   def index
     @hosts = Host.all.visible.with_authors.order('repositories_count DESC')
-
-    @scope = Repository.visible.order('last_synced_at DESC').includes(:host)
-    @pagy, @repositories = pagy_countless(@scope, items: 10)
-    fresh_when(@repositories, public: true)
   end
 
   def show

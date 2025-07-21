@@ -6,3 +6,15 @@
     text-decoration: underline;
   }
 }
+
+
+.generic-home__ecosystems-banner {
+  background-image: asset-url('ecosystems-illustration-placeholder.png');
+  @include media-breakpoint-up(md) {
+    background-position-y: 720%;
+  }
+  @include media-breakpoint-up(lg) {
+    background-position-x: calc(50% + 380px);
+    background-position-y: 0;
+  }
+}

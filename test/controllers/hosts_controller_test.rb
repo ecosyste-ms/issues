@@ -11,8 +11,6 @@ class HostsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_template 'hosts/index'
     assert_not_nil assigns(:hosts)
-    assert_not_nil assigns(:repositories)
-    assert_not_nil assigns(:pagy)
   end
 
   test 'should order hosts by repositories count descending' do
@@ -53,64 +51,16 @@ class HostsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test 'should show recent repositories on index' do
-    # Create repository with recent sync
-    recent_repo = create_repository(@host,
-      full_name: 'recent/repo',
-      owner: 'recent',
-      last_synced_at: 1.hour.ago
-    )
 
+
+
+  test 'should respond successfully on index' do
     get hosts_path
     assert_response :success
     
-    repositories = assigns(:repositories)
-    assert_not_nil repositories
-    # Should be ordered by last_synced_at DESC
-    if repositories.size > 1
-      assert repositories.first.last_synced_at >= repositories.last.last_synced_at if repositories.first.last_synced_at && repositories.last.last_synced_at
-    end
-  end
-
-  test 'should only show visible repositories on index' do
-    # Create invisible repository (no last_synced_at)
-    invisible_repo = create_repository(@host,
-      full_name: 'invisible/repo',
-      owner: 'invisible',
-      last_synced_at: nil
-    )
-
-    get hosts_path
-    assert_response :success
-    
-    repositories = assigns(:repositories)
-    assert_not_nil repositories
-    assert repositories.none? { |r| r.id == invisible_repo.id }
-  end
-
-  test 'should paginate repositories on index' do
-    # Create multiple repositories
-    15.times do |i|
-      create_repository(@host,
-        full_name: "test/repo#{i}",
-        last_synced_at: i.hours.ago
-      )
-    end
-
-    get hosts_path
-    assert_response :success
-    
-    pagy = assigns(:pagy)
-    assert_not_nil pagy
-    assert_equal 10, pagy.vars[:items]
-  end
-
-  test 'should set fresh_when for caching on index' do
-    get hosts_path
-    assert_response :success
-    
-    # Check that ETag is set
-    assert_not_nil response.headers['ETag']
+    # Should respond with HTML
+    assert_not_nil response.headers['Content-Type']
+    assert_includes response.headers['Content-Type'], 'text/html'
   end
 
   test 'should show host' do

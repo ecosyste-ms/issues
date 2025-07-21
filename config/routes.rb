@@ -60,5 +60,5 @@ Rails.application.routes.draw do
 
   get "/debug" => "application#debug"
 
-  root "hosts#index"
+  root "home#index"
 end
