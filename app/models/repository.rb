@@ -10,6 +10,7 @@ class Repository < ApplicationRecord
   scope :created_after, ->(date) { where('created_at > ?', date) }
   scope :updated_after, ->(date) { where('updated_at > ?', date) }
   scope :owner, ->(owner) { where(owner: owner) }
+  scope :with_issues, -> { where('issues_count > 0 OR pull_requests_count > 0') }
 
   def self.sync_least_recently_synced
     github_host = Host.find_by(name: 'GitHub')
