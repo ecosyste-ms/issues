@@ -3,7 +3,7 @@
           <div class="row">
             <div class="col-lg-10 offset-lg-1 py-5">
               <h1 class="display-1 mb-3">Comprehensive issue and pull request intelligence</h1>
-              <h2 class="lead mb-4">Track, analyze, and understand the pulse of open source development across 10.5 million repositories. </h2>
+              <h2 class="lead mb-4">Track, analyze, and understand the pulse of open source development across <%= number_to_human @hosts.sum(&:repositories_count) %> repositories. </h2>
             </div>
           </div>
         </div>
