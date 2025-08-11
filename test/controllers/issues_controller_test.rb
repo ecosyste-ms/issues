@@ -67,4 +67,12 @@ class IssuesControllerTest < ActionDispatch::IntegrationTest
     assert issues.first.number > issues.last.number
   end
 
+  test 'should handle issues with nil users' do
+    create_issue(@repository, number: 300, title: 'Issue with nil user', user: nil)
+
+    get host_repository_issues_path(@host, @repository.full_name)
+    assert_response :success
+    assert_select 'p.card-subtitle', /Unknown/
+  end
+
 end

@@ -11,7 +11,7 @@
       
         <p class="card-subtitle mb-2 text-muted"><i><small>
           <%= issue.pull_request ? 'Pull Request' : 'Issue' %> -
-          State: <%= issue.state %> - Opened by <%= link_to_unless issue.user.blank?, issue.user, host_author_path(@host, issue.user) %> <%= time_ago_in_words(issue.created_at) %> ago
+          State: <%= issue.state %> - Opened by <%= issue.user.blank? ? "Unknown" : link_to(issue.user, host_author_path(@host, issue.user)) %> <%= time_ago_in_words(issue.created_at) %> ago
           <% if issue.comments_count > 0 %>
             - <%= pluralize issue.comments_count, 'comment' %>   
           <% end %>
