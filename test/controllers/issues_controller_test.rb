@@ -75,4 +75,11 @@ class IssuesControllerTest < ActionDispatch::IntegrationTest
     assert_select 'p.card-subtitle', /Unknown/
   end
 
+  test 'should handle issues with nil comments_count' do
+    create_issue(@repository, number: 400, title: 'Issue with nil comments', user: 'test_user', comments_count: nil)
+
+    get host_repository_issues_path(@host, @repository.full_name)
+    assert_response :success
+  end
+
 end
