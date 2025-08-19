@@ -143,10 +143,13 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'lookup handles missing url parameter' do
-    # In development/test mode, Rails shows the error page (500)
-    # In production it would return 404
     get api_v1_repositories_lookup_path, as: :json
-    assert_response :internal_server_error
+    assert_response :not_found
+  end
+
+  test 'lookup handles nil url parameter' do
+    get api_v1_repositories_lookup_path, params: { url: nil }, as: :json
+    assert_response :not_found
   end
 
   test 'lookup handles invalid url format' do

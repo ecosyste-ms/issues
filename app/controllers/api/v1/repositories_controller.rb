@@ -25,6 +25,7 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
     url = params[:url]
     priority = params[:priority].present?
     parsed_url = Addressable::URI.parse(url)
+    raise ActiveRecord::RecordNotFound unless parsed_url&.host
     @host = Host.find_by_domain(parsed_url.host)
     raise ActiveRecord::RecordNotFound unless @host
     path = parsed_url.path.delete_prefix('/').chomp('/')
