@@ -1,7 +1,7 @@
 {
   "cron": [
     {
-      "command": "bundle exec rake gharchive:import_24_hours",
+      "command": "bundle exec rake gharchive:import_recent",
       "schedule": "0 * * * *"
     },
     {
