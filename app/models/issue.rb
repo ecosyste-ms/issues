@@ -19,6 +19,8 @@ class Issue < ApplicationRecord
   scope :owner, ->(owner) { joins(:repository).where('repositories.owner = ?', owner) }
   scope :maintainers, -> { where(author_association: MAINTAINER_ASSOCIATIONS) }
 
+  scope :label, ->(label) { where('? = ANY(labels)', label) }
+
   MAINTAINER_ASSOCIATIONS = ["MEMBER", "OWNER", "COLLABORATOR"]
 
   def to_param
