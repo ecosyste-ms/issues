@@ -98,6 +98,28 @@ class GharchiveImporterTest < ActiveSupport::TestCase
     end
   end
 
+  test "batch_upsert_repositories handles case-insensitive matching" do
+    # Create a repository with lowercase name
+    existing_repo = Repository.create!(
+      host: @host,
+      full_name: 'shahadatanik/bwt-frontend',
+      owner: 'shahadatanik'
+    )
+    
+    # Try to upsert with different case
+    repo_names = ['ShahadatAnik/BWT-FRONTEND', 'LibreCodeCoop/site']
+    
+    assert_difference 'Repository.count', 1 do
+      result = @importer.send(:batch_upsert_repositories, repo_names)
+      
+      # Should find the existing repo despite case difference
+      assert_equal 2, result.size
+      assert result.key?('ShahadatAnik/BWT-FRONTEND'), "Should have key with original case"
+      assert_equal existing_repo.id, result['ShahadatAnik/BWT-FRONTEND'].id
+      assert_equal 'shahadatanik/bwt-frontend', result['ShahadatAnik/BWT-FRONTEND'].full_name
+    end
+  end
+
   test "batch_upsert_repositories handles invalid repository names" do
     invalid_names = ['invalid', '', 'owner1/repo1']
     

@@ -258,8 +258,17 @@ class GharchiveImporter
     
     # Return hash of repo_name => repository object
     Rails.logger.info "[GHArchive] Querying for upserted repositories..."
-    result = Repository.where(host: @host, full_name: repository_names)
-                      .index_by(&:full_name)
+    # Use case-insensitive lookup since the unique index is case-insensitive
+    repositories = Repository.where(host: @host)
+                            .where("LOWER(full_name) IN (?)", repository_names.map(&:downcase))
+    
+    # Build result hash with original case as keys, mapping to the found repositories
+    result = {}
+    repositories_by_lower_name = repositories.index_by { |r| r.full_name.downcase }
+    repository_names.each do |name|
+      repo = repositories_by_lower_name[name.downcase]
+      result[name] = repo if repo
+    end
     
     elapsed_time = Time.current - start_time
     Rails.logger.info "[GHArchive] Repository upsert completed in #{elapsed_time.round(2)}s: #{result.size} repositories ready"
