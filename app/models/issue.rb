@@ -9,6 +9,7 @@ class Issue < ApplicationRecord
   scope :merged, -> { where.not(merged_at: nil) }
   scope :not_merged, -> { where(merged_at: nil).where.not(closed_at: nil) }
   scope :closed, -> { where.not(closed_at: nil) }
+  scope :open, -> { where(closed_at: nil) }
   scope :created_after, ->(date) { where('created_at > ?', date) }
   scope :created_before, ->(date) { where('created_at < ?', date) }
   scope :updated_after, ->(date) { where('updated_at > ?', date) }
