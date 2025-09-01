@@ -132,20 +132,45 @@ class Repository < ApplicationRecord
 
   def sync_issues
     host.host_instance.load_issues(self) do |data|
-      data.each do |issue|
-        i = issues.find_or_create_by(uuid: issue[:uuid])
-        i.assign_attributes issue
-        i.time_to_close = i.closed_at - i.created_at if i.closed_at.present?
-        i.host_id = host.id
-        i.save(touch: false)
+      return if data.empty?
+      
+      issues_data = data.map do |issue|
+        time_to_close = if issue[:closed_at].present? && issue[:created_at].present?
+          issue[:closed_at] - issue[:created_at]
+        else
+          nil
+        end
+        
+        # Start with a copy of the issue data
+        issue_attrs = issue.dup
+        
+        # Add/update the necessary fields
+        issue_attrs[:host_id] = host.id
+        issue_attrs[:repository_id] = id
+        issue_attrs[:time_to_close] = time_to_close
+        
+        issue_attrs
       end
+      
+      Issue.upsert_all(
+        issues_data,
+        unique_by: [:host_id, :uuid],
+        update_only: [:number, :state, :title, :locked, :comments_count, 
+                      :user, :author_association, :closed_at, :merged_at, 
+                      :labels, :assignees, :time_to_close, :node_id, :pull_request, :state_reason]
+      )
     end
 
+    issues.reset
     update_issue_counts
-  rescue
+    self.status = 'active'
+    self.last_synced_at = Time.now
+    self.save
+  rescue => e
     self.status = 'error'
     self.last_synced_at = Time.now
     self.save
+    raise e
   end
 
   def update_issue_counts
