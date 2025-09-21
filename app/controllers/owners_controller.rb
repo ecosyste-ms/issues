@@ -3,16 +3,22 @@ class OwnersController < ApplicationController
   
   def index
     @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
+    return if performed?
+
     @scope = @host.repositories.where.not(owner: nil).group(:owner).count.sort_by{|k,v| -v }
     @pagy, @owners = pagy_array(@scope)
+    @hidden_owners = Owner.where(host: @host, hidden: true).pluck(:login).to_set
+
     expires_in 1.day, public: true
   end
 
   def show
     @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
+    return if performed?
     @owner = params[:id]
+
+    owner_record = Owner.find_by(host: @host, login: @owner)
+    raise ActiveRecord::RecordNotFound if owner_record&.hidden?
 
     @issues_count = @host.issues.owner(@owner).where(pull_request: false).count
     @pull_requests_count = @host.issues.owner(@owner).where(pull_request: true).count

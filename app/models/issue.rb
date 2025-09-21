@@ -1,6 +1,7 @@
 class Issue < ApplicationRecord
   belongs_to :repository
   belongs_to :host
+  belongs_to :owner, ->(issue) { where(host_id: issue.host_id) }, foreign_key: :user, primary_key: :login, optional: true
 
   scope :past_year, -> { where('created_at > ?', 1.year.ago) }
   scope :bot, -> { where('issues.user ILIKE ?', '%[bot]') }

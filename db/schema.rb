@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_21_144252) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_21_204324) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -97,6 +97,33 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_21_144252) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["status"], name: "index_jobs_on_status"
+  end
+
+  create_table "owners", force: :cascade do |t|
+    t.integer "host_id"
+    t.string "login"
+    t.string "name"
+    t.string "uuid"
+    t.string "kind"
+    t.string "description"
+    t.string "email"
+    t.string "website"
+    t.string "location"
+    t.string "twitter"
+    t.string "company"
+    t.string "avatar_url"
+    t.integer "repositories_count", default: 0
+    t.datetime "last_synced_at"
+    t.json "metadata", default: {}
+    t.bigint "total_stars"
+    t.integer "followers"
+    t.integer "following"
+    t.boolean "hidden", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "host_id, lower((login)::text)", name: "index_owners_on_host_id_lower_login", unique: true
+    t.index ["host_id", "uuid"], name: "index_owners_on_host_id_and_uuid", unique: true
+    t.index ["last_synced_at"], name: "index_owners_on_last_synced_at"
   end
 
   create_table "repositories", force: :cascade do |t|

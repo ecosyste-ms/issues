@@ -3,8 +3,11 @@ class AuthorsController < ApplicationController
   
   def show
     @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
+    return if performed?
     @author = params[:id]
+
+    owner = Owner.find_by(host: @host, login: @author)
+    raise ActiveRecord::RecordNotFound if owner&.hidden?
 
     raise ActiveRecord::RecordNotFound if @host.issues.where(user: @author).empty?
 
@@ -35,9 +38,12 @@ class AuthorsController < ApplicationController
 
   def index
     @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
+    return if performed?
+
     @scope = @host.issues.group(:user).count.sort_by{|k,v| -v }
     @pagy, @authors = pagy_array(@scope)
+    @hidden_users = Owner.where(host: @host, hidden: true).pluck(:login).to_set
+
     expires_in 1.day, public: true
   end
 end

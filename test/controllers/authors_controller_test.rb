@@ -270,11 +270,58 @@ class AuthorsControllerTest < ActionDispatch::IntegrationTest
     proper_host = create_host(name: 'exact.host', url: 'https://exact.host')
     author = 'testauthor'
     create_issue(create_repository(proper_host, full_name: 'test/repo'), user: author)
-    
+
     get host_author_path('exact.host', author)
-    
+
     assert_response :success
     assert_equal proper_host, assigns(:host)
     assert_equal author, assigns(:author)
+  end
+
+  test 'should return 404 for hidden author' do
+    hidden_author = 'hidden_user'
+    Owner.create!(host: @host, login: hidden_author, hidden: true)
+    create_issue(@issue.repository, number: 999, user: hidden_author)
+
+    get host_author_path(@host, hidden_author)
+    assert_response :not_found
+  end
+
+  test 'should set hidden users for view filtering' do
+    # Create a hidden author
+    hidden_author = 'hidden_user'
+    Owner.create!(host: @host, login: hidden_author, hidden: true)
+
+    # Create issues for both visible and hidden authors
+    create_issue(@issue.repository, number: 1001, user: 'visible_author')
+    create_issue(@issue.repository, number: 1002, user: hidden_author)
+
+    get host_authors_path(@host)
+    assert_response :success
+
+    hidden_users = assigns(:hidden_users)
+    assert_not_nil hidden_users
+    assert hidden_users.include?(hidden_author)
+  end
+
+  test 'should handle multiple hidden authors in index' do
+    # Create multiple hidden authors
+    hidden1 = 'hidden_user1'
+    hidden2 = 'hidden_user2'
+    Owner.create!(host: @host, login: hidden1, hidden: true)
+    Owner.create!(host: @host, login: hidden2, hidden: true)
+
+    # Create issues
+    create_issue(@issue.repository, number: 1101, user: hidden1)
+    create_issue(@issue.repository, number: 1102, user: hidden2)
+    create_issue(@issue.repository, number: 1103, user: 'visible_user')
+
+    get host_authors_path(@host)
+    assert_response :success
+
+    hidden_users = assigns(:hidden_users)
+    assert_not_nil hidden_users
+    assert hidden_users.include?(hidden1)
+    assert hidden_users.include?(hidden2)
   end
 end

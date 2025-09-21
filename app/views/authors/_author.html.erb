@@ -1,21 +1,23 @@
 <% name, count = author %>
-<div class="card mb-3 repository d-flex">
-  <div class="card-body pb-1">
-    <div class="d-flex">
-      
-      <div class="flex-grow-1 ms-3 text-break">
-        <h5 class='card-title'>
-            <%= link_to name, host_author_path(@host.name, name) %>
-        </h5>
-      
-        <p class="card-subtitle mb-2 text-muted"><i><small>
-          Total issues and pull requests: <%= number_with_delimiter count %><br/>
-        </small></i></p>
+<% unless @hidden_users&.include?(name) %>
+  <div class="card mb-3 repository d-flex">
+    <div class="card-body pb-1">
+      <div class="d-flex">
+
+        <div class="flex-grow-1 ms-3 text-break">
+          <h5 class='card-title'>
+              <%= link_to name, host_author_path(@host.name, name) %>
+          </h5>
+
+          <p class="card-subtitle mb-2 text-muted"><i><small>
+            Total issues and pull requests: <%= number_with_delimiter count %><br/>
+          </small></i></p>
+        </div>
+        <div class="flex-shrink-0">
+          <%# todo avatar url %>
+          <img src="" class="rounded" height='40' width='40' onerror="this.style.display='none'">
+        </div>
       </div>
-      <div class="flex-shrink-0">
-        <%# todo avatar url %>
-        <img src="" class="rounded" height='40' width='40' onerror="this.style.display='none'">
-      </div>  
     </div>
   </div>
-</div>
+<% end %>

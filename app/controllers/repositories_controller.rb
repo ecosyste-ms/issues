@@ -31,7 +31,7 @@ class RepositoriesController < ApplicationController
   def show
     @host = find_host_with_redirect(params[:host_id])
     return if performed? # redirect already happened
-    
+
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
     fresh_when(@repository, public: true)
     if @repository.nil?
@@ -40,8 +40,20 @@ class RepositoriesController < ApplicationController
       @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
       raise ActiveRecord::RecordNotFound unless @repository
     end
-    @maintainers = @repository.issues.maintainers.group(:user).count.sort_by{|k,v| -v }.first(15)
-    @active_maintainers = @repository.issues.maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }.first(15)
+
+    owner = Owner.find_by(host: @host, login: @repository.owner)
+    raise ActiveRecord::RecordNotFound if owner&.hidden?
+
+    issues_with_owners = @repository.issues.includes(:owner)
+    hidden_users = issues_with_owners.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
+
+    @maintainers = @repository.issues.maintainers.group(:user).count
+    @maintainers = @maintainers.reject { |user, _| hidden_users.include?(user) } if hidden_users.any?
+    @maintainers = @maintainers.sort_by{|k,v| -v }.first(15)
+
+    @active_maintainers = @repository.issues.maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count
+    @active_maintainers = @active_maintainers.reject { |user, _| hidden_users.include?(user) } if hidden_users.any?
+    @active_maintainers = @active_maintainers.sort_by{|k,v| -v }.first(15)
   end
 
   def charts
@@ -58,6 +70,10 @@ class RepositoriesController < ApplicationController
     end_date = params[:end_date].presence || Date.today 
 
     scope = @repository.issues
+
+    issues_with_owners = @repository.issues.includes(:owner)
+    hidden_users = issues_with_owners.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
+    scope = scope.where.not(user: hidden_users) if hidden_users.any?
 
     scope = scope.created_after(start_date) if start_date.present?
     scope = scope.created_before(end_date) if end_date.present?
@@ -86,6 +102,10 @@ class RepositoriesController < ApplicationController
     end_date = params[:end_date].presence || Date.today 
 
     scope = @repository.issues
+
+    issues_with_owners = @repository.issues.includes(:owner)
+    hidden_users = issues_with_owners.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
+    scope = scope.where.not(user: hidden_users) if hidden_users.any?
 
     scope = scope.created_after(start_date) if start_date.present?
     scope = scope.created_before(end_date) if end_date.present?
