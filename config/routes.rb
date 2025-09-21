@@ -58,7 +58,5 @@ Rails.application.routes.draw do
   get '/422', to: 'errors#unprocessable'
   get '/500', to: 'errors#internal'
 
-  get "/debug" => "application#debug"
-
   root "home#index"
 end
