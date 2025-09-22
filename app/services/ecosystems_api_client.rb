@@ -6,6 +6,7 @@ module EcosystemsApiClient
       f.response :json
       f.headers['X-Requested-By'] = 'issues.ecosyste.ms'
       f.headers['User-Agent'] = 'issues.ecosyste.ms'
+      f.headers['X-API-Key'] = ENV['ECOSYSTEMS_API_KEY'] if ENV['ECOSYSTEMS_API_KEY']
     end
   end
 end
