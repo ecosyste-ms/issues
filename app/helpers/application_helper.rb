@@ -48,4 +48,10 @@ module ApplicationHelper
       line_chart chart_data_host_repository_path(@repository.host, @repository, chart: name, period: @period, exclude_bots: @exclude_bots, start_date: @start_date, end_date: @end_date), thousands: ",", title: name.humanize, max: max, ytitle: ytitle
     end
   end
+
+  def bootstrap_icon(symbol, options = {})
+    return "" if symbol.nil?
+    icon = BootstrapIcons::BootstrapIcon.new(symbol, options)
+    content_tag(:svg, icon.path.html_safe, icon.options)
+  end
 end
