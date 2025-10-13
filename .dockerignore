@@ -14,5 +14,6 @@ coverage/
 .AppleDouble
 .LSOverride
 
+*.dump
 data/
 .ruby-lsp

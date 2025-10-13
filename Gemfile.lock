@@ -106,6 +106,7 @@ GEM
     ffi (1.17.2-arm-linux-musl)
     ffi (1.17.2-arm64-darwin)
     ffi (1.17.2-x86_64-linux-gnu)
+    ffi (1.17.2-x86_64-linux-musl)
     gitlab (6.0.0)
       base64 (~> 0.2.0)
       httparty (~> 0.20)
@@ -120,6 +121,9 @@ GEM
       bigdecimal
       rake (>= 13)
     google-protobuf (4.32.1-x86_64-linux-gnu)
+      bigdecimal
+      rake (>= 13)
+    google-protobuf (4.32.1-x86_64-linux-musl)
       bigdecimal
       rake (>= 13)
     groupdate (6.7.0)
@@ -171,6 +175,8 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
+    nokogiri (1.18.10-x86_64-linux-musl)
+      racc (~> 1.4)
     numerizer (0.1.1)
     octokit (10.0.0)
       faraday (>= 1, < 3)
@@ -181,6 +187,7 @@ GEM
     pg (1.6.2-aarch64-linux-musl)
     pg (1.6.2-arm64-darwin)
     pg (1.6.2-x86_64-linux)
+    pg (1.6.2-x86_64-linux-musl)
     pg_query (6.1.0)
       google-protobuf (>= 3.25.3)
     pghero (3.7.0)
@@ -323,6 +330,7 @@ PLATFORMS
   arm-linux-musl
   arm64-darwin
   x86_64-linux
+  x86_64-linux-musl
 
 DEPENDENCIES
   actionpack (~> 8.0.0)
@@ -423,11 +431,13 @@ CHECKSUMS
   ffi (1.17.2-arm-linux-musl) sha256=977dfb7f3a6381206dbda9bc441d9e1f9366bf189a634559c3b7c182c497aaa3
   ffi (1.17.2-arm64-darwin) sha256=54dd9789be1d30157782b8de42d8f887a3c3c345293b57ffb6b45b4d1165f813
   ffi (1.17.2-x86_64-linux-gnu) sha256=05d2026fc9dbb7cfd21a5934559f16293815b7ce0314846fee2ac8efbdb823ea
+  ffi (1.17.2-x86_64-linux-musl) sha256=97c0eb3981414309285a64dc4d466bd149e981c279a56371ef811395d68cb95c
   gitlab (6.0.0) sha256=be8e096775b84fb331f9e91b201b4356c3159eec6b0c7c4e157c46a02305a93a
   google-protobuf (4.32.1) sha256=d9ec3f52a283802055647af5d824dcdfe0a791c6ecbad6a514442f40759015e7
   google-protobuf (4.32.1-aarch64-linux-musl) sha256=a9cdae8e14ccb781b40efb996ec7ca151fe8521c46cfd40e2b05d62867ab555c
   google-protobuf (4.32.1-arm64-darwin) sha256=ef2b6c138847f03af94eeed58ee8aaf00263dd66490ec659202c06dc3b2f0c29
   google-protobuf (4.32.1-x86_64-linux-gnu) sha256=2d209c1980dbdeb4114c7d839a3305fb78dc90bde42fb9a22974c8a4841e0263
+  google-protobuf (4.32.1-x86_64-linux-musl) sha256=d5314aea8817bd372177205667b4f4442a5884212bcaccb1ba569ec8a1a06ec4
   groupdate (6.7.0) sha256=beaa8d5bf3856814681914a1d4a20e77436a2214b85d0017dc2ea5c355fb6777
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
   httparty (0.23.2) sha256=72d52830ab5862115a3c9a4b16738dd67d9a691ffd796cf86bad8abaa8f1febb
@@ -453,6 +463,7 @@ CHECKSUMS
   nokogiri (1.18.10-arm-linux-musl) sha256=1c6ea754e51cecc85c30ee8ab1e6aa4ce6b6e134d01717e9290e79374a9e00aa
   nokogiri (1.18.10-arm64-darwin) sha256=c2b0de30770f50b92c9323fa34a4e1cf5a0af322afcacd239cd66ee1c1b22c85
   nokogiri (1.18.10-x86_64-linux-gnu) sha256=ff5ba26ba2dbce5c04b9ea200777fd225061d7a3930548806f31db907e500f72
+  nokogiri (1.18.10-x86_64-linux-musl) sha256=0651fccf8c2ebbc2475c8b1dfd7ccac3a0a6d09f8a41b72db8c21808cb483385
   numerizer (0.1.1) sha256=10ec9efec62472b69a3a0e275a18a44baa595ce6e2e4cfc1678d5cb2974c336f
   octokit (10.0.0) sha256=82e99a539b7637b7e905e6d277bb0c1a4bed56735935cc33db6da7eae49a24e8
   ostruct (0.6.3) sha256=95a2ed4a4bd1d190784e666b47b2d3f078e4a9efda2fccf18f84ddc6538ed912
@@ -461,6 +472,7 @@ CHECKSUMS
   pg (1.6.2-aarch64-linux-musl) sha256=c4402447c56279bea80472770522e95c8a2ff49b7f3e534d0cdb01eb27fd6eb8
   pg (1.6.2-arm64-darwin) sha256=4d44500b28d5193b26674583d199a6484f80f1f2ea9cf54f7d7d06a1b7e316b6
   pg (1.6.2-x86_64-linux) sha256=525f438137f2d1411a1ebcc4208ec35cb526b5a3b285a629355c73208506a8ea
+  pg (1.6.2-x86_64-linux-musl) sha256=e5c8668ffeaf7a9c3458a3dcb002dffa6d8ee1fca9ae534ffef861d2b15644ca
   pg_query (6.1.0) sha256=8b005229e209f12c5887c34c60d0eb2a241953b9475b53a9840d24578532481e
   pghero (3.7.0) sha256=a8d8497095dbe168bb03fe50a11309ab068cd1c1ef4c88d9bbeb97be4809f522
   popper_js (2.11.8) sha256=f4b0be717fc0d50bdb3dbbc55788525a9e0e8f640b76c9971fc34ee609eadbd2
@@ -520,7 +532,7 @@ CHECKSUMS
   zlib (3.2.1) sha256=6301546b5f108c358304c3095d20e45ddebb31d5079341f95e08e9049770aa6a
 
 RUBY VERSION
-   ruby 3.4.6p54
+   ruby 3.4.7p0
 
 BUNDLED WITH
    2.7.2
