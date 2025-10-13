@@ -303,7 +303,7 @@ class GharchiveImporterTest < ActiveSupport::TestCase
     assert_equal ['assignee1'], result[:assignees]
   end
 
-  test "map_pull_request_event extracts correct data" do
+  test "map_pull_request_event extracts correct data from old format" do
     event = {
       'type' => 'PullRequestEvent',
       'payload' => {
@@ -325,10 +325,10 @@ class GharchiveImporterTest < ActiveSupport::TestCase
         }
       }
     }
-    
+
     repository = create(:repository, :rails, host: @host)
     result = @importer.send(:map_pull_request_event, event, repository)
-    
+
     assert_equal 789, result[:uuid]
     assert_equal 101, result[:number]
     assert_equal 'open', result[:state]
@@ -338,6 +338,35 @@ class GharchiveImporterTest < ActiveSupport::TestCase
     assert_equal 'prauthor', result[:user]
     assert_equal [], result[:labels]
     assert_equal [], result[:assignees]
+  end
+
+  test "map_pull_request_event handles new minimal format with default values" do
+    event = {
+      'type' => 'PullRequestEvent',
+      'payload' => {
+        'pull_request' => {
+          'id' => 2907834030,
+          'number' => 5,
+          'url' => 'https://api.github.com/repos/test-owner/test-repo/pulls/5',
+          'base' => { 'ref' => 'main' },
+          'head' => { 'ref' => 'feature' }
+        }
+      }
+    }
+
+    repository = create(:repository, :rails, host: @host, full_name: 'test-owner/test-repo')
+
+    result = @importer.send(:map_pull_request_event, event, repository)
+
+    assert_not_nil result
+    assert_equal 2907834030, result[:uuid]
+    assert_equal 5, result[:number]
+    assert_equal 'open', result[:state] # Default value
+    assert_equal 'PR #5', result[:title] # Default title
+    assert_equal true, result[:pull_request]
+    assert_equal 0, result[:comments_count]
+    assert_nil result[:user]
+    assert_equal [], result[:labels]
   end
 
   private
