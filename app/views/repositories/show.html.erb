@@ -82,13 +82,15 @@
           <h4>Top Issue Authors</h4>
           <ul>
             <% @repository.issue_authors.first(15).each do |author, count| %>
-              <li>
-                <%= link_to author, host_author_path(@host.name, author) %>
-                <% if bot?(author) %>
-                  <span title='bot'>🤖</span>
-                <% end %>
-                (<%= number_with_delimiter count %>)
-              </li>
+              <% unless @hidden_users&.include?(author) %>
+                <li>
+                  <%= link_to author, host_author_path(@host.name, author) %>
+                  <% if bot?(author) %>
+                    <span title='bot'>🤖</span>
+                  <% end %>
+                  (<%= number_with_delimiter count %>)
+                </li>
+              <% end %>
             <% end %>
           </ul>
         </div>
@@ -96,13 +98,15 @@
           <h4>Top Pull Request Authors</h4>
           <ul>
             <% @repository.pull_request_authors.first(15).each do |author, count| %>
-              <li>
-                <%= link_to author, host_author_path(@host.name, author) %>
-                <% if bot?(author) %>
-                  <span title='bot'>🤖</span>
-                <% end %>
-                (<%= number_with_delimiter count %>)
-              </li>
+              <% unless @hidden_users&.include?(author) %>
+                <li>
+                  <%= link_to author, host_author_path(@host.name, author) %>
+                  <% if bot?(author) %>
+                    <span title='bot'>🤖</span>
+                  <% end %>
+                  (<%= number_with_delimiter count %>)
+                </li>
+              <% end %>
             <% end %>
           </ul>
         </div>

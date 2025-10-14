@@ -180,8 +180,93 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
 
   test 'should raise not found for non-existent host in repository routes' do
     get host_repository_path('nonexistent.example.com', 'test/repo')
-    
+
     assert_response :not_found
+  end
+
+  test 'should return 404 for repository with hidden owner' do
+    hidden_owner_name = 'secret_owner'
+    repo = create_repository(@host, full_name: "#{hidden_owner_name}/private_repo", owner: hidden_owner_name)
+    Owner.create!(host: @host, login: hidden_owner_name, hidden: true)
+
+    get host_repository_path(@host, repo.full_name)
+    assert_response :not_found
+  end
+
+  test 'should filter hidden users from issue authors list' do
+    hidden_user = 'secret_user'
+    visible_user = 'visible_user'
+
+    # Create a repository
+    repo = create_repository(@host, full_name: 'test/repo', owner: 'test')
+
+    # Create a hidden owner for the hidden user
+    Owner.create!(host: @host, login: hidden_user, hidden: true)
+
+    # Create issues from both visible and hidden users
+    create_issue(repo, number: 1, user: visible_user, pull_request: false)
+    create_issue(repo, number: 2, user: hidden_user, pull_request: false)
+    create_issue(repo, number: 3, user: visible_user, pull_request: false)
+
+    get host_repository_path(@host, repo.full_name)
+    assert_response :success
+
+    # Check that hidden_users instance variable is set
+    hidden_users = assigns(:hidden_users)
+    assert_not_nil hidden_users
+    assert hidden_users.include?(hidden_user)
+    assert_not hidden_users.include?(visible_user)
+  end
+
+  test 'should filter hidden users from pull request authors list' do
+    hidden_user = 'secret_pr_user'
+    visible_user = 'visible_pr_user'
+
+    # Create a repository
+    repo = create_repository(@host, full_name: 'test/pr_repo', owner: 'test')
+
+    # Create a hidden owner for the hidden user
+    Owner.create!(host: @host, login: hidden_user, hidden: true)
+
+    # Create pull requests from both visible and hidden users
+    create_pull_request(repo, number: 1, user: visible_user)
+    create_pull_request(repo, number: 2, user: hidden_user)
+    create_pull_request(repo, number: 3, user: visible_user)
+
+    get host_repository_path(@host, repo.full_name)
+    assert_response :success
+
+    # Check that hidden_users instance variable is set
+    hidden_users = assigns(:hidden_users)
+    assert_not_nil hidden_users
+    assert hidden_users.include?(hidden_user)
+    assert_not hidden_users.include?(visible_user)
+  end
+
+  test 'should filter hidden users from maintainers list' do
+    hidden_maintainer = 'secret_maintainer'
+    visible_maintainer = 'visible_maintainer'
+
+    # Create a repository
+    repo = create_repository(@host, full_name: 'test/maintainer_repo', owner: 'test')
+
+    # Create a hidden owner for the hidden maintainer
+    Owner.create!(host: @host, login: hidden_maintainer, hidden: true)
+
+    # Create issues from maintainers (MEMBER association makes them maintainers)
+    create_issue(repo, number: 1, user: visible_maintainer, author_association: 'MEMBER')
+    create_issue(repo, number: 2, user: hidden_maintainer, author_association: 'MEMBER')
+
+    get host_repository_path(@host, repo.full_name)
+    assert_response :success
+
+    # Check that maintainers list doesn't include hidden users
+    maintainers = assigns(:maintainers)
+    assert_not_nil maintainers
+
+    maintainer_logins = maintainers.map { |login, count| login }
+    assert maintainer_logins.include?(visible_maintainer)
+    assert_not maintainer_logins.include?(hidden_maintainer)
   end
 
 end

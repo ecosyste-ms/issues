@@ -45,14 +45,14 @@ class RepositoriesController < ApplicationController
     raise ActiveRecord::RecordNotFound if owner&.hidden?
 
     issues_with_owners = @repository.issues.includes(:owner)
-    hidden_users = issues_with_owners.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
+    @hidden_users = issues_with_owners.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
 
     @maintainers = @repository.issues.maintainers.group(:user).count
-    @maintainers = @maintainers.reject { |user, _| hidden_users.include?(user) } if hidden_users.any?
+    @maintainers = @maintainers.reject { |user, _| @hidden_users.include?(user) } if @hidden_users.any?
     @maintainers = @maintainers.sort_by{|k,v| -v }.first(15)
 
     @active_maintainers = @repository.issues.maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count
-    @active_maintainers = @active_maintainers.reject { |user, _| hidden_users.include?(user) } if hidden_users.any?
+    @active_maintainers = @active_maintainers.reject { |user, _| @hidden_users.include?(user) } if @hidden_users.any?
     @active_maintainers = @active_maintainers.sort_by{|k,v| -v }.first(15)
   end
 
