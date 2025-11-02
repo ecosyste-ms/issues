@@ -17,3 +17,9 @@ production:
     - Pagy::OverflowError
     - ActiveRecord::StatementInvalid
     - ActionDispatch::RemoteIp::IpSpoofAttackError
+    - Socket::ResolutionError
+    - Errno::ENETUNREACH
+    - Gitlab::Error::TooManyRequests
+    - Gitlab::Error::ServiceUnavailable
+    - Faraday::FollowRedirects::RedirectLimitReached
+    - Octokit::Unauthorized
