@@ -23,7 +23,7 @@ gem "faraday-gzip"
 gem "faraday-follow_redirects"
 gem "faraday-multipart"
 gem 'faraday-net_http_persistent'
-gem "pagy"
+gem "pagy", "~> 9.4.0"
 gem "pghero"
 gem "pg_query"
 gem 'bootstrap'
