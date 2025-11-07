@@ -11,6 +11,11 @@ class IssuesController < ApplicationController
     hidden_users = scope.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
     scope = scope.where.not(user: hidden_users) if hidden_users.any?
 
+    if params[:label].presence
+      @label = params[:label]
+      scope = scope.label @label
+    end
+
     @pagy, @issues = pagy(scope.order('number DESC'))
     expires_in 1.hour, public: true
   end

@@ -7,7 +7,11 @@
       
     <%= link_to @repository.full_name, host_repository_path(@host, @repository), target: :_blank %> issues and pull requests
   </h1>
-  
+
+  <%- if @label %>
+    <p>Labelled with: <em><%= @label %></em></p>
+  <%- end %>
+
   <%= render @issues %>
   <%== pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>  
 </div>

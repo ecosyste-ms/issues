@@ -82,4 +82,15 @@ class IssuesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test 'should filter by label' do
+    create_issue(@repository, number: 300, title: 'Horrible Bug', user: nil, labels: ["bug", "help wanted"])
+    create_issue(@repository, number: 301, title: 'Amazing Feature', user: nil, labels: ["enhancement", "help wanted"])
+
+    get host_repository_issues_path(@host, @repository.full_name, label: "bug")
+    assert_response :success
+
+    assert_select 'h5.card-title', /Horrible Bug/
+    assert_not response.body.include? "Amazing Feature"
+  end
+
 end
