@@ -161,7 +161,7 @@
           <ul>
             <% @repository.pull_request_labels_count.first(30).each do |label, count| %>
               <li>
-                <%= label %>
+                <%= link_to label, host_repository_issues_path(@host, @repository.full_name, label: label) %>
                 (<%= number_with_delimiter count %>)
               </li>
             <% end %>
