@@ -49,19 +49,43 @@ class Job < ApplicationRecord
   end
 
   def sync_issues
+    # Check if repository already marked as not_found
+    parsed_url = Addressable::URI.parse(url)
+    domain = parsed_url.host
+    path_parts = parsed_url.path.split('/').reject(&:empty?)
+    full_name = path_parts.join('/')
+
+    host = Host.find_by_domain(domain)
+    if host
+      existing_repo = host.repositories.find_by('lower(full_name) = ?', full_name.downcase)
+      if existing_repo&.status == 'not_found'
+        raise "Repository #{full_name} is marked as not_found"
+      end
+    end
+
     # TODO don't depend on the repos service being up
     conn = EcosystemsApiClient.client('https://repos.ecosyste.ms')
-    
+
     response = conn.get("api/v1/repositories/lookup?url=#{CGI.escape(url)}")
+
+    if response.status == 404
+      # Mark repository as not_found
+      if host
+        repo = existing_repo || host.repositories.create(full_name: full_name)
+        repo.update(status: 'not_found')
+      end
+      raise "Repository not found in repos service: #{url}"
+    end
+
     return nil unless response.success?
     json = response.body
 
     host = Host.find_by(name: json['host']['name'])
     repo = host.repositories.find_by('lower(full_name) = ?', json['full_name'].downcase)
     repo = host.repositories.create(full_name: json['full_name']) if repo.nil?
-    
+
     repo.sync_issues
-    
+
     results = repo.as_json
     return results
   end
