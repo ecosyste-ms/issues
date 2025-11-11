@@ -7,8 +7,14 @@ class IssuesController < ApplicationController
 
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
 
-    scope = @repository.issues.includes(:owner)
-    hidden_users = scope.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
+    scope = @repository.issues
+
+    # Find hidden users efficiently without loading all issues
+    hidden_users = Owner.hidden
+                        .where(host_id: @host.id)
+                        .where(login: scope.select(:user).distinct)
+                        .pluck(:login)
+
     scope = scope.where.not(user: hidden_users) if hidden_users.any?
 
     if params[:label].presence

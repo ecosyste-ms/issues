@@ -93,4 +93,37 @@ class IssuesControllerTest < ActionDispatch::IntegrationTest
     assert_not response.body.include? "Amazing Feature"
   end
 
+  test 'should exclude issues from hidden owners' do
+    hidden_owner = Owner.create!(login: 'hidden_user', host: @host, hidden: true)
+    visible_owner = Owner.create!(login: 'visible_user', host: @host, hidden: false)
+
+    create_issue(@repository, number: 500, title: 'Issue from hidden user', user: 'hidden_user')
+    create_issue(@repository, number: 501, title: 'Issue from visible user', user: 'visible_user')
+
+    get host_repository_issues_path(@host, @repository.full_name)
+    assert_response :success
+
+    assert_not response.body.include? "Issue from hidden user"
+    assert response.body.include? "Issue from visible user"
+  end
+
+  test 'should handle large number of issues efficiently' do
+    # Create a large number of issues to test performance
+    200.times do |i|
+      create_issue(@repository,
+        number: 2000 + i,
+        title: "Performance test issue #{i}",
+        user: "perf_user_#{i % 10}"
+      )
+    end
+
+    # This should not timeout or cause memory issues
+    get host_repository_issues_path(@host, @repository.full_name, page: 2, per_page: 100)
+    assert_response :success
+
+    pagy = assigns(:pagy)
+    assert_not_nil pagy
+    assert pagy.count >= 200
+  end
+
 end
