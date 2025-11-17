@@ -25,10 +25,6 @@ module Issues
     config.load_defaults 7.0
     config.exceptions_app = self.routes
     config.active_support.to_time_preserves_timezone = :zone
-    
-    # Add custom middleware
-    require_relative '../app/middleware/user_agent_tracker'
-    config.middleware.use UserAgentTracker
 
     # Configuration for the application, engines, and railties goes here.
     #
