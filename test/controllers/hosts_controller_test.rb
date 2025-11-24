@@ -217,8 +217,27 @@ class HostsControllerTest < ActionDispatch::IntegrationTest
   test 'should raise not found for non-existent host even with case variations' do
     # Request completely non-existent host
     get host_path('nonexistent.example.com')
-    
+
     # Should raise not found
     assert_response :not_found
+  end
+
+  test 'should render view when pagy has zero or one page' do
+    # Create host with few repositories (less than one page)
+    small_host = create_host(name: 'small.host', url: 'https://small.host', repositories_count: 2)
+    2.times do |i|
+      create_repository(small_host,
+        full_name: "small/repo#{i}",
+        owner: 'small',
+      )
+    end
+
+    get host_path(small_host)
+    assert_response :success
+
+    pagy = assigns(:pagy)
+    assert_not_nil pagy
+    # View should render without error regardless of page count
+    assert_select 'div.container-sm'
   end
 end
