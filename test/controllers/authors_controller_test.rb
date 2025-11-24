@@ -324,4 +324,108 @@ class AuthorsControllerTest < ActionDispatch::IntegrationTest
     assert hidden_users.include?(hidden1)
     assert hidden_users.include?(hidden2)
   end
+
+  test 'should hide repos with hidden owners on author show page' do
+    # Create hidden owner
+    hidden_owner = 'hidden_owner'
+    Owner.create!(host: @host, login: hidden_owner, hidden: true)
+
+    # Create repos with visible and hidden owners
+    visible_repo = create_repository(@host, full_name: 'visible_owner/repo1', owner: 'visible_owner')
+    hidden_repo = create_repository(@host, full_name: 'hidden_owner/repo2', owner: hidden_owner)
+
+    # Create issues in both repos by the author
+    create_issue(visible_repo, number: 2001, user: @author, pull_request: false)
+    create_issue(hidden_repo, number: 2002, user: @author, pull_request: false)
+
+    get host_author_path(@host, @author)
+    assert_response :success
+
+    issue_repos = assigns(:issue_repos)
+    assert_not_nil issue_repos
+
+    # Visible repo should be present
+    assert issue_repos.any? { |full_name, _count| full_name == 'visible_owner/repo1' }
+
+    # Hidden repo should NOT be present
+    assert_not issue_repos.any? { |full_name, _count| full_name == 'hidden_owner/repo2' }
+  end
+
+  test 'should hide pull request repos with hidden owners on author show page' do
+    # Create hidden owner
+    hidden_owner = 'hidden_pr_owner'
+    Owner.create!(host: @host, login: hidden_owner, hidden: true)
+
+    # Create repos with visible and hidden owners
+    visible_repo = create_repository(@host, full_name: 'visible_pr_owner/repo1', owner: 'visible_pr_owner')
+    hidden_repo = create_repository(@host, full_name: 'hidden_pr_owner/repo2', owner: hidden_owner)
+
+    # Create pull requests in both repos by the author
+    create_pull_request(visible_repo, number: 3001, user: @author)
+    create_pull_request(hidden_repo, number: 3002, user: @author)
+
+    get host_author_path(@host, @author)
+    assert_response :success
+
+    pr_repos = assigns(:pull_request_repos)
+    assert_not_nil pr_repos
+
+    # Visible repo should be present
+    assert pr_repos.any? { |full_name, _count| full_name == 'visible_pr_owner/repo1' }
+
+    # Hidden repo should NOT be present
+    assert_not pr_repos.any? { |full_name, _count| full_name == 'hidden_pr_owner/repo2' }
+  end
+
+  test 'should hide maintainer repos with hidden owners on author show page' do
+    # Create hidden owner
+    hidden_owner = 'hidden_maintainer_owner'
+    Owner.create!(host: @host, login: hidden_owner, hidden: true)
+
+    # Create repos
+    visible_repo = create_repository(@host, full_name: 'visible_maint_owner/repo1', owner: 'visible_maint_owner')
+    hidden_repo = create_repository(@host, full_name: 'hidden_maintainer_owner/repo2', owner: hidden_owner)
+
+    # Create issues where @author is a maintainer (MEMBER association)
+    create_issue(visible_repo, number: 4001, user: @author, author_association: 'MEMBER')
+    create_issue(hidden_repo, number: 4002, user: @author, author_association: 'MEMBER')
+
+    get host_author_path(@host, @author)
+    assert_response :success
+
+    maintainers = assigns(:maintainers)
+    assert_not_nil maintainers
+
+    # Visible repo should be present
+    assert maintainers.any? { |full_name, _count| full_name == 'visible_maint_owner/repo1' }
+
+    # Hidden repo should NOT be present
+    assert_not maintainers.any? { |full_name, _count| full_name == 'hidden_maintainer_owner/repo2' }
+  end
+
+  test 'should hide active maintainer repos with hidden owners on author show page' do
+    # Create hidden owner
+    hidden_owner = 'hidden_active_owner'
+    Owner.create!(host: @host, login: hidden_owner, hidden: true)
+
+    # Create repos
+    visible_repo = create_repository(@host, full_name: 'visible_active_owner/repo1', owner: 'visible_active_owner')
+    hidden_repo = create_repository(@host, full_name: 'hidden_active_owner/repo2', owner: hidden_owner)
+
+    # Create recent issues where @author is a maintainer (MEMBER association)
+    create_issue(visible_repo, number: 5001, user: @author, author_association: 'MEMBER', created_at: 1.month.ago)
+    create_issue(hidden_repo, number: 5002, user: @author, author_association: 'MEMBER', created_at: 1.month.ago)
+
+    get host_author_path(@host, @author)
+    assert_response :success
+
+    active_maintainers = assigns(:active_maintainers)
+    assert_not_nil active_maintainers
+
+    # Visible repo should be present
+    assert active_maintainers.any? { |full_name, _count| full_name == 'visible_active_owner/repo1' }
+
+    # Hidden repo should NOT be present
+    assert_not active_maintainers.any? { |full_name, _count| full_name == 'hidden_active_owner/repo2' }
+  end
 end
