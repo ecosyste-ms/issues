@@ -21,8 +21,13 @@ class AuthorsController < ApplicationController
     @average_issue_comments_count = @host.issues.where(user: params[:id], pull_request: false).average(:comments_count)
     @average_pull_request_comments_count = @host.issues.where(user: params[:id], pull_request: true).average(:comments_count)
     
-    @issue_repos = @host.issues.where(user: params[:id], pull_request: false).group(:repository).count.sort_by{|k,v| -v }
-    @pull_request_repos = @host.issues.where(user: params[:id], pull_request: true).group(:repository).count.sort_by{|k,v| -v }
+    hidden_owners = @host.owners.hidden.pluck(:login).to_set
+
+    issue_repos = @host.issues.where(user: params[:id], pull_request: false).group(:repository).count.sort_by{|k,v| -v }
+    @issue_repos = issue_repos.reject { |repo, _count| hidden_owners.include?(repo.owner) }.map { |repo, count| [repo.full_name, count] }
+
+    pull_request_repos = @host.issues.where(user: params[:id], pull_request: true).group(:repository).count.sort_by{|k,v| -v }
+    @pull_request_repos = pull_request_repos.reject { |repo, _count| hidden_owners.include?(repo.owner) }.map { |repo, count| [repo.full_name, count] }
     
     @issue_author_associations_count = @host.issues.where(user: params[:id], pull_request: false).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
     @pull_request_author_associations_count = @host.issues.where(user: params[:id], pull_request: true).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
@@ -30,8 +35,11 @@ class AuthorsController < ApplicationController
     @issue_labels_count = @host.issues.where(user: params[:id]).where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
     @pull_request_labels_count = @host.issues.where(user: params[:id]).where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
 
-    @maintainers = @host.issues.user(@author).maintainers.group(:repository).count.sort_by{|k,v| -v }.first(15)
-    @active_maintainers = @host.issues.user(@author).maintainers.where('issues.created_at > ?', 1.year.ago).group(:repository).count.sort_by{|k,v| -v }.first(15)
+    maintainers = @host.issues.user(@author).maintainers.group(:repository).count.sort_by{|k,v| -v }
+    active_maintainers = @host.issues.user(@author).maintainers.where('issues.created_at > ?', 1.year.ago).group(:repository).count.sort_by{|k,v| -v }
+
+    @maintainers = maintainers.reject { |repo, _count| hidden_owners.include?(repo.owner) }.map { |repo, count| [repo.full_name, count] }.first(15)
+    @active_maintainers = active_maintainers.reject { |repo, _count| hidden_owners.include?(repo.owner) }.map { |repo, count| [repo.full_name, count] }.first(15)
 
     expires_in 1.day, public: true
   end
