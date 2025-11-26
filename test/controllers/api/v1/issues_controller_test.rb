@@ -177,13 +177,84 @@ class Api::V1::IssuesControllerTest < ActionDispatch::IntegrationTest
   test 'show respects cache headers' do
     get api_v1_host_repository_issue_path(@host, @repository, @issue.number), as: :json
     assert_response :success
-    
+
     etag = response.headers['ETag']
     assert etag.present?
-    
+
     # Request again with If-None-Match
-    get api_v1_host_repository_issue_path(@host, @repository, @issue.number), 
+    get api_v1_host_repository_issue_path(@host, @repository, @issue.number),
         headers: { 'If-None-Match': etag }, as: :json
     assert_response :not_modified
+  end
+
+  test 'index filters by label' do
+    labeled_issue = create_issue(@repository, number: 800, labels: ['bug', 'critical'])
+    other_issue = create_issue(@repository, number: 801, labels: ['enhancement'])
+    unlabeled_issue = create_issue(@repository, number: 802, labels: [])
+
+    get api_v1_host_repository_issues_path(@host, @repository),
+        params: { label: 'bug' }, as: :json
+    assert_response :success
+
+    json = JSON.parse(response.body)
+    numbers = json.map { |i| i['number'] }
+    assert_includes numbers, 800
+    assert_not_includes numbers, 801
+    assert_not_includes numbers, 802
+  end
+
+  test 'labels returns all labels with counts and issues_url' do
+    create_issue(@repository, number: 900, labels: ['bug', 'critical'])
+    create_issue(@repository, number: 901, labels: ['bug', 'enhancement'])
+    create_issue(@repository, number: 902, labels: ['documentation'])
+
+    get labels_api_v1_host_repository_path(@host, @repository), as: :json
+    assert_response :success
+
+    json = JSON.parse(response.body)
+    assert json.is_a?(Array)
+
+    labels_hash = json.to_h { |item| [item['label'], item['count']] }
+    assert_equal 2, labels_hash['bug']
+    assert_equal 1, labels_hash['critical']
+    assert_equal 1, labels_hash['enhancement']
+    assert_equal 1, labels_hash['documentation']
+
+    bug_entry = json.find { |item| item['label'] == 'bug' }
+    assert bug_entry['issues_url'].present?
+    assert_includes bug_entry['issues_url'], 'label=bug'
+  end
+
+  test 'labels returns labels sorted by count descending' do
+    create_issue(@repository, number: 950, labels: ['popular', 'popular', 'rare'])
+    create_issue(@repository, number: 951, labels: ['popular'])
+    create_issue(@repository, number: 952, labels: ['medium'])
+    create_issue(@repository, number: 953, labels: ['medium'])
+
+    get labels_api_v1_host_repository_path(@host, @repository), as: :json
+    assert_response :success
+
+    json = JSON.parse(response.body)
+    counts = json.map { |item| item['count'] }
+    assert_equal counts, counts.sort.reverse
+  end
+
+  test 'labels caches response for 1 day' do
+    get labels_api_v1_host_repository_path(@host, @repository), as: :json
+    assert_response :success
+
+    assert_match(/max-age=86400/, response.headers['Cache-Control'])
+    assert_match(/public/, response.headers['Cache-Control'])
+  end
+
+  test 'labels handles repository with no labels' do
+    # Create issue without labels
+    create_issue(@repository, number: 999, labels: [])
+
+    get labels_api_v1_host_repository_path(@host, @repository), as: :json
+    assert_response :success
+
+    json = JSON.parse(response.body)
+    assert json.is_a?(Array)
   end
 end

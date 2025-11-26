@@ -22,6 +22,7 @@ Rails.application.routes.draw do
           resources :issues, constraints: { id: /.*/ }, only: [:index, :show]
           member do
             get 'ping', to: 'repositories#ping'
+            get 'labels', to: 'issues#labels'
           end
         end
         resources :authors, constraints: { id: /.*/ }, only: [:index, :show]

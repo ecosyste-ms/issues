@@ -13,6 +13,7 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
 
     scope = scope.where(pull_request: params[:pull_request]) if params[:pull_request].present?
     scope = scope.where(state: params[:state]) if params[:state].present?
+    scope = scope.label(params[:label]) if params[:label].present?
 
     if params[:sort].present? || params[:order].present?
       sort = params[:sort] || 'number'
@@ -33,5 +34,13 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
     @issue = @repository.issues.find_by!(number: params[:id])
     fresh_when @issue, public: true
+  end
+
+  def labels
+    @host = find_host_with_redirect(params[:host_id])
+    return if performed? # redirect already happened
+    @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
+    @labels = @repository.issues.pluck(:labels).flatten.compact.tally.sort_by { |_k, v| -v }
+    expires_in 1.day, public: true
   end
 end
