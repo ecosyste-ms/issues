@@ -227,6 +227,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: label
+          in: query
+          description: filter by label name
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -266,6 +272,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issue'
+  /hosts/{hostName}/repositories/{repoName}/labels:
+    get:
+      summary: get a list of labels used in issues for a repository
+      operationId: getHostRepositoryLabels
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - in: path
+          name: repoName
+          schema:
+            type: string
+          required: true
+          description: name of repository
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LabelCount'
   /hosts/{hostName}/owners:
     get:
       summary: get a list of owners from a host
@@ -784,6 +816,8 @@ components:
           type: string
         count:
           type: integer
+        issues_url:
+          type: string
     AuthorCount:
       type: object
       properties:
