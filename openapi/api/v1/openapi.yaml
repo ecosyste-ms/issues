@@ -217,7 +217,7 @@ paths:
             type: string
         - name: pull_request
           in: query
-          description: filter by pull request status
+          description: filter by if it's a pull request
           required: false
           schema:
             type: boolean
