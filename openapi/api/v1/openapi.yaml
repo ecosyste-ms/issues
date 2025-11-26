@@ -71,18 +71,6 @@ paths:
             type: string
           required: true
           description: name of host
-        - name: page
-          in: query
-          description: pagination page number 
-          required: false
-          schema:
-            type: integer
-        - name: per_page
-          in: query
-          description: Number of records to return 
-          required: false
-          schema:
-            type: integer
       responses:
         200:
           description: OK
@@ -227,6 +215,18 @@ paths:
           required: false
           schema:
             type: string
+        - name: pull_request
+          in: query
+          description: filter by if it's a pull request
+          required: false
+          schema:
+            type: boolean
+        - name: state
+          in: query
+          description: filter by issue state (open, closed)
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -266,6 +266,192 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issue'
+  /hosts/{hostName}/owners:
+    get:
+      summary: get a list of owners from a host
+      operationId: getHostOwners
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - name: page
+          in: query
+          description: pagination page number
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records to return
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OwnerSummary'
+  /hosts/{hostName}/owners/{ownerName}:
+    get:
+      summary: get owner statistics from a host
+      operationId: getHostOwner
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - in: path
+          name: ownerName
+          schema:
+            type: string
+          required: true
+          description: name of owner
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+  /hosts/{hostName}/owners/{ownerName}/maintainers:
+    get:
+      summary: get maintainers for an owner
+      operationId: getHostOwnerMaintainers
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - in: path
+          name: ownerName
+          schema:
+            type: string
+          required: true
+          description: name of owner
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintainers'
+  /hosts/{hostName}/authors:
+    get:
+      summary: get a list of authors from a host
+      operationId: getHostAuthors
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - name: page
+          in: query
+          description: pagination page number
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records to return
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuthorSummary'
+  /hosts/{hostName}/authors/{authorName}:
+    get:
+      summary: get author statistics from a host
+      operationId: getHostAuthor
+      parameters:
+        - in: path
+          name: hostName
+          schema:
+            type: string
+          required: true
+          description: name of host
+        - in: path
+          name: authorName
+          schema:
+            type: string
+          required: true
+          description: username of author
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Author'
+  /jobs:
+    post:
+      summary: create a job to sync issues from a URL
+      operationId: createJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: URL of the repository to sync issues from
+              required:
+                - url
+      responses:
+        302:
+          description: Redirect to the created job
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: string
+  /jobs/{jobId}:
+    get:
+      summary: get the status of a job
+      operationId: getJob
+      parameters:
+        - in: path
+          name: jobId
+          schema:
+            type: integer
+          required: true
+          description: ID of the job
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
 components:
   schemas:
     Host:
@@ -413,5 +599,206 @@ components:
           format: date-time
         html_url:
           type: string
+        url:
+          type: string
+    OwnerSummary:
+      type: object
+      properties:
+        login:
+          type: string
+        repositories_count:
+          type: integer
+        owner_url:
+          type: string
+    Owner:
+      type: object
+      properties:
+        login:
+          type: string
+        issues_count:
+          type: integer
+        pull_requests_count:
+          type: integer
+        merged_pull_requests_count:
+          type: integer
+        average_issue_close_time:
+          type: number
+        average_pull_request_close_time:
+          type: number
+        average_issue_comments_count:
+          type: number
+        average_pull_request_comments_count:
+          type: number
+        issue_repos:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepoCount'
+        pull_request_repos:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepoCount'
+        issue_author_associations_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorAssociationCount'
+        pull_request_author_associations_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorAssociationCount'
+        issue_labels_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelCount'
+        pull_request_labels_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelCount'
+        issue_authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorCount'
+        pull_request_authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorCount'
+        maintainers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintainerCount'
+        active_maintainers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintainerCount'
+    Maintainers:
+      type: object
+      properties:
+        login:
+          type: string
+        maintainers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintainerCount'
+        active_maintainers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintainerCount'
+    AuthorSummary:
+      type: object
+      properties:
+        login:
+          type: string
+        repositories_count:
+          type: integer
+        author_url:
+          type: string
+    Author:
+      type: object
+      properties:
+        login:
+          type: string
+        issues_count:
+          type: integer
+        pull_requests_count:
+          type: integer
+        merged_pull_requests_count:
+          type: integer
+        average_issue_close_time:
+          type: number
+        average_pull_request_close_time:
+          type: number
+        average_issue_comments_count:
+          type: number
+        average_pull_request_comments_count:
+          type: number
+        issue_repos:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepoCount'
+        pull_request_repos:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepoCount'
+        issue_author_associations_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorAssociationCount'
+        pull_request_author_associations_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorAssociationCount'
+        issue_labels_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelCount'
+        pull_request_labels_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelCount'
+        maintaining:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepoCount'
+        active_maintaining:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepoCount'
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        status:
+          type: string
+        results:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        sidekiq_id:
+          type: string
+    RepoCount:
+      type: object
+      properties:
+        repository:
+          type: string
+        count:
+          type: integer
+        url:
+          type: string
+    AuthorAssociationCount:
+      type: object
+      properties:
+        author_association:
+          type: string
+        count:
+          type: integer
+    LabelCount:
+      type: object
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+    AuthorCount:
+      type: object
+      properties:
+        author:
+          type: string
+        count:
+          type: integer
+        url:
+          type: string
+    MaintainerCount:
+      type: object
+      properties:
+        maintainer:
+          type: string
+        count:
+          type: integer
         url:
           type: string
