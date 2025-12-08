@@ -41,7 +41,7 @@ GEM
     appsignal (4.8.0)
       logger
       rack (>= 2.0.0)
-    base64 (0.2.0)
+    base64 (0.3.0)
     bigdecimal (3.3.1)
     bindex (0.8.1)
     bootsnap (1.19.0)
@@ -107,8 +107,8 @@ GEM
     ffi (1.17.2-arm64-darwin)
     ffi (1.17.2-x86_64-linux-gnu)
     ffi (1.17.2-x86_64-linux-musl)
-    gitlab (6.0.0)
-      base64 (~> 0.2.0)
+    gitlab (6.1.0)
+      base64
       httparty (~> 0.20)
       terminal-table (>= 1.5.1)
     google-protobuf (4.33.1)
@@ -393,7 +393,7 @@ CHECKSUMS
   activesupport (8.1.1) sha256=5e92534e8d0c8b8b5e6b16789c69dbea65c1d7b752269f71a39422e9546cea67
   addressable (2.8.8) sha256=7c13b8f9536cf6364c03b9d417c19986019e28f7c00ac8132da4eb0fe393b057
   appsignal (4.8.0) sha256=52566fd9f9bab13f854d2a43653397d9ac3b8c99667a3d0b397ff15a128b6972
-  base64 (0.2.0) sha256=0f25e9b21a02a0cc0cea8ef92b2041035d39350946e8789c562b2d1a3da01507
+  base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   bigdecimal (3.3.1) sha256=eaa01e228be54c4f9f53bf3cc34fe3d5e845c31963e7fcc5bedb05a4e7d52218
   bindex (0.8.1) sha256=7b1ecc9dc539ed8bccfc8cb4d2732046227b09d6f37582ff12e50a5047ceb17e
   bootsnap (1.19.0) sha256=d3e54558c1a9ea10cb095eb1eb8e921ae83fd4d5764b8809f63aec18ce9f60b5
@@ -431,7 +431,7 @@ CHECKSUMS
   ffi (1.17.2-arm64-darwin) sha256=54dd9789be1d30157782b8de42d8f887a3c3c345293b57ffb6b45b4d1165f813
   ffi (1.17.2-x86_64-linux-gnu) sha256=05d2026fc9dbb7cfd21a5934559f16293815b7ce0314846fee2ac8efbdb823ea
   ffi (1.17.2-x86_64-linux-musl) sha256=97c0eb3981414309285a64dc4d466bd149e981c279a56371ef811395d68cb95c
-  gitlab (6.0.0) sha256=be8e096775b84fb331f9e91b201b4356c3159eec6b0c7c4e157c46a02305a93a
+  gitlab (6.1.0) sha256=4ae1f866a1f5ae07aa1125e86c0a656b2ad0fe1d78d5ad91b8bc3b67d66063a5
   google-protobuf (4.33.1) sha256=81d9bcab7a00b30a3fd042e78fcb113a0a0f564b474c64eddc378bf0558c44ec
   google-protobuf (4.33.1-aarch64-linux-musl) sha256=e3997ef84030af7d24e9f6015fc38bccc0bebe137cbf705b74b0ccd3e2e59e4a
   google-protobuf (4.33.1-arm64-darwin) sha256=1d86489ed6b21d51b9eb66ca41ab26c243e01193d44bba2be4963e2ad0992103
