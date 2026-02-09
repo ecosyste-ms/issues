@@ -15,10 +15,10 @@ class OwnersControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil assigns(:pagy)
   end
 
-  test 'should cache owners index for 1 day' do
+  test 'should cache owners index with CDN headers' do
     get host_owners_path(@host)
     assert_response :success
-    assert_equal 'max-age=86400, public', response.headers['Cache-Control']
+    assert_includes response.headers['Cache-Control'], 's-maxage=21600'
   end
 
   test 'should exclude repositories without owner' do
@@ -79,10 +79,10 @@ class OwnersControllerTest < ActionDispatch::IntegrationTest
     assert_equal @owner, assigns(:owner)
   end
 
-  test 'should cache owner show for 1 day' do
+  test 'should cache owner show with CDN headers' do
     get host_owner_path(@host, @owner)
     assert_response :success
-    assert_equal 'max-age=86400, public', response.headers['Cache-Control']
+    assert_includes response.headers['Cache-Control'], 's-maxage=21600'
   end
 
   test 'should calculate issue statistics for owner' do

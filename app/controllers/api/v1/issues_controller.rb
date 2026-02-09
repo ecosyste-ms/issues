@@ -41,6 +41,5 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
     return if performed? # redirect already happened
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
     @labels = @repository.issues.pluck(:labels).flatten.compact.tally.sort_by { |_k, v| -v }
-    expires_in 1.day, public: true
   end
 end

@@ -27,7 +27,6 @@ class Api::V1::AuthorsController < Api::V1::ApplicationController
 
     @maintainers = @host.issues.user(@author).maintainers.group(:repository).count.sort_by{|k,v| -v }
     @active_maintainers = @host.issues.user(@author).maintainers.where('issues.created_at > ?', 1.year.ago).group(:repository).count.sort_by{|k,v| -v }
-    expires_in 1.day, public: true
   end
 
   def index
@@ -35,6 +34,5 @@ class Api::V1::AuthorsController < Api::V1::ApplicationController
     return if performed? # redirect already happened
     @scope = @host.issues.group(:user).count.sort_by{|k,v| -v }
     @pagy, @authors = pagy_array(@scope)
-    expires_in 1.day, public: true
   end
 end

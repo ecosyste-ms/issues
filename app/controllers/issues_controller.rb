@@ -23,7 +23,6 @@ class IssuesController < ApplicationController
     end
 
     @pagy, @issues = pagy(scope.order('number DESC'))
-    expires_in 1.hour, public: true
   end
 
 end

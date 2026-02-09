@@ -15,10 +15,10 @@ class AuthorsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil assigns(:pagy)
   end
 
-  test 'should cache authors index for 1 day' do
+  test 'should cache authors index with CDN headers' do
     get host_authors_path(@host)
     assert_response :success
-    assert_equal 'max-age=86400, public', response.headers['Cache-Control']
+    assert_includes response.headers['Cache-Control'], 's-maxage=21600'
   end
 
   test 'should order authors by issue count descending' do
@@ -69,10 +69,10 @@ class AuthorsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @author, assigns(:author)
   end
 
-  test 'should cache author show for 1 day' do
+  test 'should cache author show with CDN headers' do
     get host_author_path(@host, @author)
     assert_response :success
-    assert_equal 'max-age=86400, public', response.headers['Cache-Control']
+    assert_includes response.headers['Cache-Control'], 's-maxage=21600'
   end
 
   test 'should calculate issue statistics' do

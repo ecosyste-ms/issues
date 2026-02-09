@@ -20,10 +20,10 @@ class IssuesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test 'should cache issues index for 1 hour' do
+  test 'should cache issues index with CDN headers' do
     get host_repository_issues_path(@host, @repository.full_name)
     assert_response :success
-    assert_equal 'max-age=3600, public', response.headers['Cache-Control']
+    assert_includes response.headers['Cache-Control'], 's-maxage=21600'
   end
 
   test 'should raise not found for non-existent repository' do

@@ -41,7 +41,6 @@ class AuthorsController < ApplicationController
     @maintainers = maintainers.reject { |repo, _count| hidden_owners.include?(repo.owner) }.map { |repo, count| [repo.full_name, count] }.first(15)
     @active_maintainers = active_maintainers.reject { |repo, _count| hidden_owners.include?(repo.owner) }.map { |repo, count| [repo.full_name, count] }.first(15)
 
-    expires_in 1.day, public: true
   end
 
   def index
@@ -52,6 +51,5 @@ class AuthorsController < ApplicationController
     @pagy, @authors = pagy_array(@scope)
     @hidden_users = Owner.where(host: @host, hidden: true).pluck(:login).to_set
 
-    expires_in 1.day, public: true
   end
 end

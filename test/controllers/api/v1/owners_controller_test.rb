@@ -184,21 +184,19 @@ class Api::V1::OwnersControllerTest < ActionDispatch::IntegrationTest
     assert json['active_maintainers'].size <= json['maintainers'].size
   end
 
-  test 'show caches response for 1 day' do
+  test 'show caches response with CDN headers' do
     get api_v1_host_owner_path(@host, @owner), as: :json
     assert_response :success
-    
-    # Check Cache-Control header
-    assert_match(/max-age=86400/, response.headers['Cache-Control'])
+
+    assert_match(/s-maxage=3600/, response.headers['Cache-Control'])
     assert_match(/public/, response.headers['Cache-Control'])
   end
 
-  test 'index caches response for 1 day' do
+  test 'index caches response with CDN headers' do
     get api_v1_host_owners_path(@host), as: :json
     assert_response :success
-    
-    # Check Cache-Control header
-    assert_match(/max-age=86400/, response.headers['Cache-Control'])
+
+    assert_match(/s-maxage=3600/, response.headers['Cache-Control'])
     assert_match(/public/, response.headers['Cache-Control'])
   end
 

@@ -9,7 +9,6 @@ class OwnersController < ApplicationController
     @pagy, @owners = pagy_array(@scope)
     @hidden_owners = Owner.where(host: @host, hidden: true).pluck(:login).to_set
 
-    expires_in 1.day, public: true
   end
 
   def show
@@ -45,6 +44,5 @@ class OwnersController < ApplicationController
     @maintainers = @host.issues.owner(@owner).maintainers.group(:user).count.sort_by{|k,v| -v }.first(15)
     @active_maintainers = @host.issues.owner(@owner).maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }.first(15)
 
-    expires_in 1.day, public: true
   end
 end

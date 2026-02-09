@@ -239,11 +239,11 @@ class Api::V1::IssuesControllerTest < ActionDispatch::IntegrationTest
     assert_equal counts, counts.sort.reverse
   end
 
-  test 'labels caches response for 1 day' do
+  test 'labels caches response with CDN headers' do
     get labels_api_v1_host_repository_path(@host, @repository), as: :json
     assert_response :success
 
-    assert_match(/max-age=86400/, response.headers['Cache-Control'])
+    assert_match(/s-maxage=3600/, response.headers['Cache-Control'])
     assert_match(/public/, response.headers['Cache-Control'])
   end
 

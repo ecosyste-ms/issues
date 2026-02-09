@@ -1,5 +1,7 @@
 class Api::V1::RepositoriesController < Api::V1::ApplicationController
   include HostRedirect
+  skip_before_action :set_cache_headers, only: [:lookup, :ping]
+  skip_before_action :set_api_cache_headers, only: [:lookup, :ping]
 
   def index
     @host = find_host_with_redirect(params[:host_id])

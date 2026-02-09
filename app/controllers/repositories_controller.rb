@@ -1,5 +1,7 @@
 class RepositoriesController < ApplicationController
   include HostRedirect
+  skip_before_action :set_cache_headers, only: [:lookup]
+
   def lookup
     url = params[:url]
     priority = params[:priority].present?
