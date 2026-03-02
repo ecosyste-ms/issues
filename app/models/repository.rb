@@ -1,4 +1,15 @@
 class Repository < ApplicationRecord
+  def self.sortable_columns
+    {
+      'last_synced_at' => 'last_synced_at',
+      'issues_count' => 'issues_count',
+      'pull_requests_count' => 'pull_requests_count',
+      'created_at' => 'created_at',
+      'updated_at' => 'updated_at',
+      'full_name' => 'full_name',
+    }
+  end
+
   belongs_to :host
 
   has_many :issues, dependent: :delete_all

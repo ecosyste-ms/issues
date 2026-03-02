@@ -8,6 +8,12 @@ class ApplicationController < ActionController::Base
     request.session_options[:skip] = true
   }
 
+  def sanitize_sort(allowed_columns, default: 'updated_at')
+    sort_param = params[:sort].presence || default
+    sql = allowed_columns[sort_param] || allowed_columns[default] || default
+    Arel.sql(sql)
+  end
+
   def set_cache_headers(browser_ttl: 5.minutes, cdn_ttl: 6.hours)
     return unless request.get?
     response.cache_control.merge!(

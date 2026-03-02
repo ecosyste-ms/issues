@@ -25,11 +25,11 @@ class HostsController < ApplicationController
 
     scope = @host.repositories.visible
 
-    sort = params[:sort].presence || 'last_synced_at'
+    sort = sanitize_sort(Repository.sortable_columns, default: 'last_synced_at')
     if params[:order] == 'asc'
-      scope = scope.order(Arel.sql(sort).asc.nulls_last)
+      scope = scope.order(sort.asc.nulls_last)
     else
-      scope = scope.order(Arel.sql(sort).desc.nulls_last)
+      scope = scope.order(sort.desc.nulls_last)
     end
 
     @pagy, @repositories = pagy_countless(scope)
