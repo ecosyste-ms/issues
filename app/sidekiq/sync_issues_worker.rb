@@ -2,7 +2,7 @@ class SyncIssuesWorker
   include Sidekiq::Worker
   include Sidekiq::Status::Worker
   
-  sidekiq_options queue: :default
+  sidekiq_options queue: :default, lock: :until_executed, lock_expiration: 1.day.to_i
 
   def perform(job_id)
     Job.find_by_id!(job_id).perform_issue_syncing

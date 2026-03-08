@@ -1,16 +1,40 @@
 require 'sidekiq'
 require 'sidekiq-status'
 
+SidekiqUniqueJobs.configure do |config|
+  config.reaper          = :ruby
+  config.reaper_count    = 2_000
+  config.reaper_interval = 60
+  config.reaper_timeout  = 15
+
+  config.reaper_resurrector_enabled  = true
+  config.reaper_resurrector_interval = 300
+end
+
 Sidekiq.configure_client do |config|
   config.logger = Rails.logger if Rails.env.test?
-  # accepts :expiration (optional)
+  config.redis = { ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE } }
+
   Sidekiq::Status.configure_client_middleware config, expiration: 60.minutes.to_i
+
+  config.client_middleware do |chain|
+    chain.add SidekiqUniqueJobs::Middleware::Client
+  end
 end
 
 Sidekiq.configure_server do |config|
-  # accepts :expiration (optional)
-  Sidekiq::Status.configure_server_middleware config, expiration: 60.minutes.to_i
+  config.redis = { ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE } }
 
-  # accepts :expiration (optional)
+  Sidekiq::Status.configure_server_middleware config, expiration: 60.minutes.to_i
   Sidekiq::Status.configure_client_middleware config, expiration: 60.minutes.to_i
+
+  config.client_middleware do |chain|
+    chain.add SidekiqUniqueJobs::Middleware::Client
+  end
+
+  config.server_middleware do |chain|
+    chain.add SidekiqUniqueJobs::Middleware::Server
+  end
+
+  SidekiqUniqueJobs::Server.configure(config)
 end
