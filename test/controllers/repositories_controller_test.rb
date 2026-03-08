@@ -175,7 +175,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     get host_repositories_path('Codeberg.org')
     
     assert_response :moved_permanently
-    assert_redirected_to host_path('codeberg.org')
+    assert_redirected_to host_repositories_path('codeberg.org')
   end
 
   test 'should raise not found for non-existent host in repository routes' do

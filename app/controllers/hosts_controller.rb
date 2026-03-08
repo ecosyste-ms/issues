@@ -1,28 +1,11 @@
 class HostsController < ApplicationController
+  before_action :find_host_by_id, only: [:show]
+
   def index
     @hosts = Host.all.visible.with_authors.order('repositories_count DESC')
   end
 
   def show
-    host_name = params[:id]
-    
-    # Try to find exact match first
-    @host = Host.find_by(name: host_name)
-    
-    # If not found, try case-insensitive search
-    unless @host
-      @host = Host.find_by('LOWER(name) = ?', host_name.downcase)
-      
-      # If found with different case, redirect to correct case
-      if @host && @host.name != host_name
-        redirect_to host_path(@host.name), status: :moved_permanently
-        return
-      end
-    end
-    
-    # If still not found, raise error
-    raise ActiveRecord::RecordNotFound.new("Couldn't find Host with name=#{host_name}") unless @host
-
     scope = @host.repositories.visible
 
     sort = sanitize_sort(Repository.sortable_columns, default: 'last_synced_at')

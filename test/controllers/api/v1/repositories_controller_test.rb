@@ -279,6 +279,6 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
     get api_v1_host_repositories_path('Codeberg.org'), as: :json
     
     assert_response :moved_permanently
-    assert_redirected_to api_v1_host_path('codeberg.org')
+    assert_redirected_to api_v1_host_repositories_path('codeberg.org')
   end
 end

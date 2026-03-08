@@ -1,16 +1,12 @@
 class Api::V1::OwnersController < Api::V1::ApplicationController
-  include HostRedirect
-  
+  before_action :find_host
+
   def index
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
     @scope = @host.repositories.where.not(owner: nil).group(:owner).count.sort_by{|k,v| -v }
     @pagy, @owners = pagy_array(@scope)
   end
 
   def show
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
     @owner = params[:id]
 
     @issues_count = @host.issues.owner(@owner).where(pull_request: false).count
@@ -22,10 +18,10 @@ class Api::V1::OwnersController < Api::V1::ApplicationController
 
     @average_issue_comments_count = @host.issues.owner(@owner).where(pull_request: false).average(:comments_count)
     @average_pull_request_comments_count = @host.issues.owner(@owner).where(pull_request: true).average(:comments_count)
-    
+
     @issue_repos = @host.issues.owner(@owner).where(pull_request: false).group(:repository).count.sort_by{|k,v| -v }
     @pull_request_repos = @host.issues.owner(@owner).where(pull_request: true).group(:repository).count.sort_by{|k,v| -v }
-    
+
     @issue_author_associations_count = @host.issues.owner(@owner).where(pull_request: false).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
     @pull_request_author_associations_count = @host.issues.owner(@owner).where(pull_request: true).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
 
@@ -41,13 +37,11 @@ class Api::V1::OwnersController < Api::V1::ApplicationController
   end
 
   def maintainers
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
     @owner = params[:id]
 
     @maintainers = @host.issues.owner(@owner).maintainers.group(:user).count.sort_by{|k,v| -v }
     @active_maintainers = @host.issues.owner(@owner).maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
 
-    expires_in 1.day, public: true    
+    expires_in 1.day, public: true
   end
 end

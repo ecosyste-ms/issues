@@ -64,6 +64,44 @@ class HostTest < ActiveSupport::TestCase
     assert_includes host.errors[:kind], "can't be blank"
   end
   
+  test 'find_by_name should find host by exact name' do
+    host = create_host(name: 'GitHub', url: 'https://github.com', kind: 'github')
+    assert_equal host, Host.find_by_name('GitHub')
+  end
+
+  test 'find_by_name should find host case-insensitively' do
+    host = create_host(name: 'GitHub', url: 'https://github.com', kind: 'github')
+    assert_equal host, Host.find_by_name('github')
+    assert_equal host, Host.find_by_name('GITHUB')
+  end
+
+  test 'find_by_name should fall back to domain lookup' do
+    host = create_host(name: 'GitHub', url: 'https://github.com', kind: 'github')
+    assert_equal host, Host.find_by_name('github.com')
+  end
+
+  test 'find_by_name should return nil for blank name' do
+    assert_nil Host.find_by_name('')
+    assert_nil Host.find_by_name(nil)
+  end
+
+  test 'find_by_name should return nil for non-existent name' do
+    assert_nil Host.find_by_name('nonexistent')
+  end
+
+  test 'find_by_name! should find host by name' do
+    host = create_host(name: 'GitHub', url: 'https://github.com', kind: 'github')
+    assert_equal host, Host.find_by_name!('GitHub')
+  end
+
+  test 'find_by_name! should raise RecordNotFound for non-existent name' do
+    assert_raises(ActiveRecord::RecordNotFound) { Host.find_by_name!('nonexistent') }
+  end
+
+  test 'find_by_name! should raise RecordNotFound for blank name' do
+    assert_raises(ActiveRecord::RecordNotFound) { Host.find_by_name!(nil) }
+  end
+
   test 'sync_all should create hosts with original names and prevent duplicates' do
     # Mock the API response
     api_response = [

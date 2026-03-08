@@ -13,11 +13,16 @@ class Host < ApplicationRecord
   scope :with_authors, -> { where('authors_count > 0') }
 
   def self.find_by_name(name)
-    Host.all.find { |host| host.name == name }
+    return nil if name.blank?
+    host = Host.find_by('lower(name) = ?', name.downcase)
+    host = Host.find_by_domain(name) if host.nil?
+    host
   end
 
   def self.find_by_name!(name)
-    find_by_name(name) || raise(ActiveRecord::RecordNotFound.new("Couldn't find Host with name=#{name}"))
+    host = find_by_name(name)
+    raise ActiveRecord::RecordNotFound if host.nil?
+    host
   end
 
   def self.find_by_domain(domain)

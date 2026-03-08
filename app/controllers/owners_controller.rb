@@ -1,10 +1,7 @@
 class OwnersController < ApplicationController
-  include HostRedirect
-  
-  def index
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed?
+  before_action :find_host
 
+  def index
     @scope = @host.repositories.where.not(owner: nil).group(:owner).count.sort_by{|k,v| -v }
     @pagy, @owners = pagy_array(@scope)
     @hidden_owners = Owner.where(host: @host, hidden: true).pluck(:login).to_set
@@ -12,8 +9,6 @@ class OwnersController < ApplicationController
   end
 
   def show
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed?
     @owner = params[:id]
 
     owner_record = Owner.find_by(host: @host, login: @owner)
@@ -28,10 +23,10 @@ class OwnersController < ApplicationController
 
     @average_issue_comments_count = @host.issues.owner(@owner).where(pull_request: false).average(:comments_count)
     @average_pull_request_comments_count = @host.issues.owner(@owner).where(pull_request: true).average(:comments_count)
-    
+
     @issue_repos = @host.issues.owner(@owner).where(pull_request: false).group(:repository).count.sort_by{|k,v| -v }
     @pull_request_repos = @host.issues.owner(@owner).where(pull_request: true).group(:repository).count.sort_by{|k,v| -v }
-    
+
     @issue_author_associations_count = @host.issues.owner(@owner).where(pull_request: false).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
     @pull_request_author_associations_count = @host.issues.owner(@owner).where(pull_request: true).with_author_association.group(:author_association).count.sort_by{|k,v| -v }
 

@@ -1,5 +1,5 @@
 class RepositoriesController < ApplicationController
-  include HostRedirect
+  before_action :find_host, only: [:index, :show, :charts, :chart_data]
   skip_before_action :set_cache_headers, only: [:lookup]
 
   def lookup
@@ -25,15 +25,10 @@ class RepositoriesController < ApplicationController
   end
 
   def index
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
     redirect_to host_path(@host)
   end
 
   def show
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
-
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
     fresh_when(@repository, public: true)
     if @repository.nil?
@@ -59,9 +54,6 @@ class RepositoriesController < ApplicationController
   end
 
   def charts
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
-    
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
     @period = (params[:period].presence || 'month')
     @exclude_bots = params[:exclude_bots].present?
@@ -69,7 +61,7 @@ class RepositoriesController < ApplicationController
     @end_date = params[:end_date].presence || Date.today
 
     start_date = params[:start_date].presence || @repository.issues.order(:created_at).first.created_at
-    end_date = params[:end_date].presence || Date.today 
+    end_date = params[:end_date].presence || Date.today
 
     scope = @repository.issues
 
@@ -93,15 +85,12 @@ class RepositoriesController < ApplicationController
   end
 
   def chart_data
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
-    
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:id].downcase)
-    
+
     period = (params[:period].presence || 'month').to_sym
 
     start_date = params[:start_date].presence || @repository.issues.order(:created_at).first.created_at
-    end_date = params[:end_date].presence || Date.today 
+    end_date = params[:end_date].presence || Date.today
 
     scope = @repository.issues
 
@@ -147,7 +136,7 @@ class RepositoriesController < ApplicationController
       data = scope.pull_request.merged.group_by_period(period, :merged_at).average(:time_to_close)
       data.update(data){ |_,v| v.to_f.seconds.in_days.to_i }
     end
-    
+
     ## TODO no data for these yet
     # Number of issue comments
     # Average number of comments per issue

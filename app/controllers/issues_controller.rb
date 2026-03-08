@@ -1,10 +1,7 @@
 class IssuesController < ApplicationController
-  include HostRedirect
-  
-  def index
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
+  before_action :find_host
 
+  def index
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
 
     scope = @repository.issues

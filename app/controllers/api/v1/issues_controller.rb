@@ -1,11 +1,9 @@
 class Api::V1::IssuesController < Api::V1::ApplicationController
-  include HostRedirect
-  
+  before_action :find_host
+
   def index
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
-    
+
     scope = @repository.issues
 
     scope = scope.created_after(params[:created_after]) if params[:created_after].present?
@@ -29,16 +27,12 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
   end
 
   def show
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
     @issue = @repository.issues.find_by!(number: params[:id])
     fresh_when @issue, public: true
   end
 
   def labels
-    @host = find_host_with_redirect(params[:host_id])
-    return if performed? # redirect already happened
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
     @labels = @repository.issues.pluck(:labels).flatten.compact.tally.sort_by { |_k, v| -v }
   end
