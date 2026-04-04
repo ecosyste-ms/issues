@@ -1,0 +1,33 @@
+app/controllers/authors_controller.rb
+  c51cb3bff8fb4f47 34-35
+app/models/issue.rb
+  c51cb3bff8fb4f47 26-33
+app/controllers/repositories_controller.rb
+  c51cb3bff8fb4f47 44,67,95,153-159
+app/models/host.rb
+  c51cb3bff8fb4f47 28-29,31-33,37-39
+app/models/repository.rb
+  c51cb3bff8fb4f47 97,101,105,109
+test/models/repository_test.rb
+  c51cb3bff8fb4f47 151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "7e5470935a32e7a3271a4352826e76dc27b69214",
+  "prompts": {
+    "c51cb3bff8fb4f47": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "49132ae8-3db6-4900-9bc2-6e428a93ac59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Andrew Nesbitt",
+      "messages": [],
+      "total_additions": 34,
+      "total_deletions": 40,
+      "accepted_lines": 33,
+      "overriden_lines": 0
+    }
+  }
+}
