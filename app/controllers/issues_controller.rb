@@ -19,7 +19,7 @@ class IssuesController < ApplicationController
       scope = scope.label @label
     end
 
-    @pagy, @issues = pagy(scope.order('number DESC'))
+    @pagy, @issues = pagy(scope.includes(:host, :repository).order('number DESC'))
   end
 
 end

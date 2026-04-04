@@ -94,19 +94,19 @@ class Repository < ApplicationRecord
   end
 
   def issue_labels_count
-    issues.where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+    issues.where(pull_request: false).labels_with_counts
   end
 
   def pull_request_labels_count
-    issues.where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+    issues.where(pull_request: true).labels_with_counts
   end
 
   def past_year_issue_labels_count
-    issues.where(pull_request: false).past_year.pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+    issues.where(pull_request: false).past_year.labels_with_counts
   end
 
   def past_year_pull_request_labels_count
-    issues.where(pull_request: true).past_year.pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
+    issues.where(pull_request: true).past_year.labels_with_counts
   end
 
   def issue_author_associations_count

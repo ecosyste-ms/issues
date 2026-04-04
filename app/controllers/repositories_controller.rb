@@ -41,8 +41,7 @@ class RepositoriesController < ApplicationController
     owner = Owner.find_by(host: @host, login: @repository.owner)
     raise ActiveRecord::RecordNotFound if owner&.hidden?
 
-    issues_with_owners = @repository.issues.includes(:owner)
-    @hidden_users = issues_with_owners.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
+    @hidden_users = hidden_users_for(@repository)
 
     @maintainers = @repository.issues.maintainers.group(:user).count
     @maintainers = @maintainers.reject { |user, _| @hidden_users.include?(user) } if @hidden_users.any?
@@ -65,8 +64,7 @@ class RepositoriesController < ApplicationController
 
     scope = @repository.issues
 
-    issues_with_owners = @repository.issues.includes(:owner)
-    hidden_users = issues_with_owners.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
+    hidden_users = hidden_users_for(@repository)
     scope = scope.where.not(user: hidden_users) if hidden_users.any?
 
     scope = scope.created_after(start_date) if start_date.present?
@@ -94,8 +92,7 @@ class RepositoriesController < ApplicationController
 
     scope = @repository.issues
 
-    issues_with_owners = @repository.issues.includes(:owner)
-    hidden_users = issues_with_owners.map(&:owner).compact.select(&:hidden?).map(&:login).uniq
+    hidden_users = hidden_users_for(@repository)
     scope = scope.where.not(user: hidden_users) if hidden_users.any?
 
     scope = scope.created_after(start_date) if start_date.present?
@@ -152,6 +149,13 @@ class RepositoriesController < ApplicationController
   end
 
   private
+
+  def hidden_users_for(repository)
+    Owner.hidden
+         .where(host_id: @host.id)
+         .where(login: repository.issues.select(:user).distinct)
+         .pluck(:login)
+  end
 
   def round_up_to_nearest_50(n)
     ((n / 50.0).ceil) * 50

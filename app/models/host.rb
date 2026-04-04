@@ -25,8 +25,28 @@ class Host < ApplicationRecord
     host
   end
 
+  DOMAIN_MAP_MUTEX = Mutex.new
+
+  def self.domain_map
+    DOMAIN_MAP_MUTEX.synchronize do
+      @domain_map ||= Host.all.index_by(&:domain)
+    end
+  end
+
+  def self.clear_domain_map
+    DOMAIN_MAP_MUTEX.synchronize do
+      @domain_map = nil
+    end
+  end
+
+  after_commit :clear_domain_map
+
   def self.find_by_domain(domain)
-    Host.all.find { |host| host.domain == domain }
+    domain_map[domain]
+  end
+
+  def clear_domain_map
+    self.class.clear_domain_map
   end
 
   def host_class
