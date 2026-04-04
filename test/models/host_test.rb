@@ -126,6 +126,37 @@ class HostTest < ActiveSupport::TestCase
     assert Host.exists?(name: 'GitLab.com')
   end
 
+  test 'find_by_domain should find host by URL domain' do
+    host = create_host(name: 'TestHost', url: 'https://testhost.example.com', kind: 'github')
+    Host.clear_domain_map
+    assert_equal host, Host.find_by_domain('testhost.example.com')
+  end
+
+  test 'find_by_domain should return nil for unknown domain' do
+    Host.clear_domain_map
+    assert_nil Host.find_by_domain('unknown.example.com')
+  end
+
+  test 'domain_map should be memoized' do
+    create_host(name: 'CachedHost', url: 'https://cached.example.com', kind: 'github')
+    Host.clear_domain_map
+
+    map1 = Host.domain_map
+    map2 = Host.domain_map
+    assert_same map1, map2
+  end
+
+  test 'domain_map should clear after host commit' do
+    Host.clear_domain_map
+    old_map = Host.domain_map
+
+    create_host(name: 'NewHost', url: 'https://new.example.com', kind: 'github')
+
+    new_map = Host.domain_map
+    refute_same old_map, new_map
+    assert new_map.key?('new.example.com')
+  end
+
   test 'sync_all should update existing hosts without changing name case' do
     # Create existing host
     existing_host = create_host(name: 'GitHub', url: 'https://old-github.com', kind: 'github')
