@@ -94,28 +94,19 @@ class Repository < ApplicationRecord
   end
 
   def issue_labels_count
-    labels_with_counts(issues.where(pull_request: false))
+    issues.where(pull_request: false).labels_with_counts
   end
 
   def pull_request_labels_count
-    labels_with_counts(issues.where(pull_request: true))
+    issues.where(pull_request: true).labels_with_counts
   end
 
   def past_year_issue_labels_count
-    labels_with_counts(issues.where(pull_request: false).past_year)
+    issues.where(pull_request: false).past_year.labels_with_counts
   end
 
   def past_year_pull_request_labels_count
-    labels_with_counts(issues.where(pull_request: true).past_year)
-  end
-
-  def labels_with_counts(scope)
-    scope
-      .from("issues, unnest(issues.labels) AS label")
-      .where("label IS NOT NULL")
-      .group("label")
-      .order(Arel.sql("count(*) DESC"))
-      .pluck(Arel.sql("label, count(*)"))
+    issues.where(pull_request: true).past_year.labels_with_counts
   end
 
   def issue_author_associations_count

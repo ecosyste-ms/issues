@@ -25,12 +25,18 @@ class Host < ApplicationRecord
     host
   end
 
+  DOMAIN_MAP_MUTEX = Mutex.new
+
   def self.domain_map
-    @domain_map ||= Host.all.index_by(&:domain)
+    DOMAIN_MAP_MUTEX.synchronize do
+      @domain_map ||= Host.all.index_by(&:domain)
+    end
   end
 
   def self.clear_domain_map
-    @domain_map = nil
+    DOMAIN_MAP_MUTEX.synchronize do
+      @domain_map = nil
+    end
   end
 
   after_commit :clear_domain_map

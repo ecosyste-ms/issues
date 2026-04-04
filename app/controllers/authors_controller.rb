@@ -31,20 +31,11 @@ class AuthorsController < ApplicationController
     @issue_author_associations_count = issue_scope.with_author_association.group(:author_association).count.sort_by{|k,v| -v }
     @pull_request_author_associations_count = pr_scope.with_author_association.group(:author_association).count.sort_by{|k,v| -v }
 
-    @issue_labels_count = labels_with_counts(issue_scope)
-    @pull_request_labels_count = labels_with_counts(pr_scope)
+    @issue_labels_count = issue_scope.labels_with_counts
+    @pull_request_labels_count = pr_scope.labels_with_counts
 
     @maintainers = repos_with_counts(author_scope.maintainers, hidden_owners).first(15)
     @active_maintainers = repos_with_counts(author_scope.maintainers.where('issues.created_at > ?', 1.year.ago), hidden_owners).first(15)
-  end
-
-  def labels_with_counts(scope)
-    scope
-      .from("issues, unnest(issues.labels) AS label")
-      .where("label IS NOT NULL")
-      .group("label")
-      .order(Arel.sql("count(*) DESC"))
-      .pluck(Arel.sql("label, count(*)"))
   end
 
   def repos_with_counts(scope, hidden_owners)

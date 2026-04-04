@@ -23,6 +23,14 @@ class Issue < ApplicationRecord
 
   scope :label, ->(label) { where('? = ANY(labels)', label) }
 
+  def self.labels_with_counts
+    from("issues, unnest(issues.labels) AS label")
+      .where("label IS NOT NULL")
+      .group("label")
+      .order(Arel.sql("count(*) DESC"))
+      .pluck(Arel.sql("label, count(*)"))
+  end
+
   MAINTAINER_ASSOCIATIONS = ["MEMBER", "OWNER", "COLLABORATOR"]
 
   def to_param
