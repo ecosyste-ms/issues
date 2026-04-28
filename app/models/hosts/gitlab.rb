@@ -70,6 +70,36 @@ module Hosts
       # merge requests may not be not enabled
     end
 
+    def load_reviews(repository)
+      repository.issues.pull_request.find_each do |merge_request|
+        notes = api_client.merge_request_notes(repository.full_name, merge_request.number, per_page: 100)
+
+        while notes.present?
+          review_notes = notes.select { |note| note.system == false }
+          yield review_notes.map { |note| map_review_note(note, merge_request.number) }
+
+          break unless notes.respond_to?(:next_page) && notes.next_page.present?
+          notes = notes.next_page
+        end
+      end
+    rescue *IGNORABLE_EXCEPTIONS
+      # merge requests may not be enabled
+    end
+
+    def map_review_note(note, merge_request_number)
+      {
+        uuid: note.id,
+        node_id: nil,
+        pull_request_number: merge_request_number,
+        user: note.author&.username,
+        state: 'COMMENTED',
+        author_association: nil,
+        body: note.body,
+        commit_id: nil,
+        submitted_at: note.created_at
+      }
+    end
+
     def api_client
       ::Gitlab.client(endpoint: "#{@host.url}/api/v4", private_token:  REDIS.get("gitlab_token:#{@host.id}"))
     end

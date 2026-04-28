@@ -1,6 +1,7 @@
 class Host < ApplicationRecord
   has_many :repositories
   has_many :issues
+  has_many :reviews
   has_many :owners
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }

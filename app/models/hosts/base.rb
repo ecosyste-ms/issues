@@ -61,6 +61,10 @@ module Hosts
       "#{url(repository)}/issues"
     end
 
+    def load_reviews(repository)
+      yield []
+    end
+
     def source_url(repository)
       "#{@host.url}/#{repository.source_name}"
     end

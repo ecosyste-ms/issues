@@ -13,6 +13,7 @@ class Repository < ApplicationRecord
   belongs_to :host
 
   has_many :issues, dependent: :delete_all
+  has_many :reviews, dependent: :delete_all
 
   validates :full_name, presence: true
 
@@ -172,7 +173,10 @@ class Repository < ApplicationRecord
       )
     end
 
+    sync_reviews
+
     issues.reset
+    reviews.reset
     update_issue_counts
     self.status = 'active'
     self.last_synced_at = Time.now
@@ -182,6 +186,27 @@ class Repository < ApplicationRecord
     self.last_synced_at = Time.now
     self.save
     raise e
+  end
+
+  def sync_reviews
+    host.host_instance.load_reviews(self) do |data|
+      next if data.empty?
+
+      review_data = data.map do |review|
+        review_attrs = review.dup
+        review_attrs[:host_id] = host.id
+        review_attrs[:repository_id] = id
+        review_attrs[:issue_id] = issues.find_by(number: review[:pull_request_number], pull_request: true)&.id
+        review_attrs
+      end
+
+      Review.upsert_all(
+        review_data,
+        unique_by: [:host_id, :uuid],
+        update_only: [:node_id, :pull_request_number, :user, :state, :author_association,
+                      :body, :commit_id, :submitted_at, :issue_id, :updated_at]
+      )
+    end
   end
 
   def update_issue_counts
