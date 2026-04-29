@@ -148,4 +148,38 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_nil result['issue_author']
     assert_equal 1, result['pr_author']
   end
+  test "sync_reviews stores pull request review data and links pull request issue" do
+    host = create(:host)
+    repository = create(:repository, host: host)
+    pull_request = create(:issue, repository: repository, host: host, pull_request: true, number: 42)
+
+    review_payload = [{
+      uuid: 'review-1',
+      node_id: 'node-1',
+      pull_request_number: 42,
+      user: 'reviewer',
+      state: 'APPROVED',
+      author_association: 'MEMBER',
+      body: 'Looks good',
+      commit_id: 'abc123',
+      submitted_at: Time.current
+    }]
+
+    fake_host_instance = Class.new do
+      define_method(:initialize) { |payload| @payload = payload }
+      define_method(:load_reviews) { |_repository, &block| block.call(@payload) }
+    end.new(review_payload)
+
+    host.stub(:host_instance, fake_host_instance) do
+      repository.sync_reviews
+    end
+
+    review = repository.reviews.find_by!(uuid: 'review-1')
+    assert_equal host, review.host
+    assert_equal pull_request, review.issue
+    assert_equal 42, review.pull_request_number
+    assert_equal 'reviewer', review.user
+    assert_equal 'APPROVED', review.state
+  end
+
 end

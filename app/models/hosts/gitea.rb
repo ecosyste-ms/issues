@@ -49,6 +49,31 @@ module Hosts
       end
     end
 
+    def load_reviews(repository)
+      repository.issues.pull_request.find_each do |pull_request|
+        resp = api_client.get("/api/v1/repos/#{repository.full_name}/pulls/#{pull_request.number}/reviews", {limit: 100})
+        next unless resp.success?
+
+        yield resp.body.map { |review| map_review(review, pull_request.number) }
+      end
+    rescue *IGNORABLE_EXCEPTIONS
+      # pull requests may not be enabled
+    end
+
+    def map_review(review, pull_request_number)
+      {
+        uuid: review['id'],
+        node_id: nil,
+        pull_request_number: pull_request_number,
+        user: review.dig('user', 'login'),
+        state: review['state'],
+        author_association: nil,
+        body: review['body'],
+        commit_id: review['commit_id'],
+        submitted_at: review['submitted_at'] || review['updated_at']
+      }
+    end
+
     def api_client
       Faraday.new(@host.url, request: {timeout: 30}) do |conn|
         conn.request :authorization, :bearer, REDIS.get("gitea_token:#{@host.id}")

@@ -86,6 +86,35 @@ module Hosts
       end 
     end
 
+    def load_reviews(repository)
+      repository.issues.pull_request.find_each do |pull_request|
+        reviews = api_client.pull_request_reviews(repository.full_name, pull_request.number)
+
+        while reviews.present?
+          yield map_reviews(reviews, pull_request.number)
+
+          break unless reviews.respond_to?(:next_page) && reviews.next_page.present?
+          reviews = reviews.next_page
+        end
+      end
+    end
+
+    def map_reviews(data, pull_request_number)
+      data.map do |review|
+        {
+          uuid: review.id,
+          node_id: review.node_id,
+          pull_request_number: pull_request_number,
+          user: review.user&.login,
+          state: review.state,
+          author_association: review.author_association,
+          body: review.body,
+          commit_id: review.commit_id,
+          submitted_at: review.submitted_at
+        }
+      end
+    end
+
     def map_issues(data)
       data.map do |issue|
         {
