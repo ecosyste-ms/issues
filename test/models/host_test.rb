@@ -183,4 +183,13 @@ class HostTest < ActiveSupport::TestCase
     assert_equal 'GitHub', updated_host.name # Original case preserved
     assert_equal 'https://github.com', updated_host.url # URL updated
   end
+
+  test "sync_repository_async skips hidden owners" do
+    host = create(:host, :github)
+    create(:owner, host: host, login: 'gone', hidden: true)
+
+    assert_no_difference -> { host.repositories.count } do
+      assert_nil host.sync_repository_async('gone/repo')
+    end
+  end
 end
