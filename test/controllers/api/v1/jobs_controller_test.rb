@@ -5,7 +5,7 @@ class Api::V1::JobsControllerTest < ActionDispatch::IntegrationTest
     url = 'https://github.com/rails/rails'
     
     # Mock the async job
-    Job.any_instance.expects(:parse_issues_async).once
+    Job.any_instance.expects(:sync_issues_async).once
     
     assert_difference 'Job.count', 1 do
       post api_v1_jobs_path, params: { url: url }, as: :json
@@ -36,7 +36,7 @@ class Api::V1::JobsControllerTest < ActionDispatch::IntegrationTest
 
   test 'create job records IP address' do
     url = 'https://github.com/rails/rails'
-    Job.any_instance.expects(:parse_issues_async).once
+    Job.any_instance.expects(:sync_issues_async).once
     
     post api_v1_jobs_path, params: { url: url }, as: :json, headers: { 'REMOTE_ADDR' => '1.2.3.4' }
     
