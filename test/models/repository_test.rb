@@ -1,6 +1,34 @@
 require 'test_helper'
 
 class RepositoryTest < ActiveSupport::TestCase
+  test "successful issue sync leaves repository active and visible" do
+    host = create(:host)
+    repository = create(:repository, host: host, status: 'error', last_synced_at: nil)
+    issue_data = {
+      uuid: SecureRandom.uuid,
+      number: 1,
+      state: 'open',
+      title: 'Test Issue',
+      user: 'testuser',
+      labels: [],
+      assignees: [],
+      locked: false,
+      comments_count: 0,
+      pull_request: false,
+      created_at: 1.day.ago,
+      updated_at: Time.current
+    }
+    host_api = mock
+    host_api.expects(:load_issues).with(repository).yields([issue_data])
+    host.expects(:host_instance).returns(host_api)
+
+    repository.sync_issues
+
+    repository.reload
+    assert_nil repository.status
+    assert_includes Repository.visible, repository
+  end
+
   test "sync_issues should upsert issues without duplicates" do
     host = create(:host)
     repository = create(:repository, host: host)
