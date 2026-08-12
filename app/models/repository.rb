@@ -174,9 +174,6 @@ class Repository < ApplicationRecord
 
     issues.reset
     update_issue_counts
-    self.status = 'active'
-    self.last_synced_at = Time.now
-    self.save
   rescue => e
     self.status = 'error'
     self.last_synced_at = Time.now
