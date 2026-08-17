@@ -74,6 +74,16 @@ class Api::V1::IssuesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test 'index does not create a repository for an incomplete repository path' do
+    SyncIssuesWorker.expects(:perform_async).never
+
+    assert_no_difference 'Repository.count' do
+      get api_v1_host_repository_issues_path(@host, 'owner'), as: :json
+    end
+
+    assert_response :not_found
+  end
+
   test 'index filters by created_after' do
     old_issue = create_issue(@repository, number: 200, created_at: 1.year.ago)
     new_issue = create_issue(@repository, number: 201, created_at: 1.day.ago)
