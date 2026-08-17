@@ -32,15 +32,22 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
     @repository = @host.repositories.find_by('lower(full_name) = ?', path.downcase)
     if @repository
       @repository.sync_async(request.remote_ip, priority) unless @repository.last_synced_at.present? && @repository.last_synced_at > 1.day.ago
+      return render_pending_repository(@repository) if @repository.sync_pending?
+
       redirect_to api_v1_host_repository_path(@host, @repository)
     else
       @host.sync_repository_async(path, request.remote_ip, priority) if path.present?
-      redirect_to api_v1_host_repository_path(@host, path)
+      @repository = @host.repositories.find_by('lower(full_name) = ?', path.downcase)
+      raise ActiveRecord::RecordNotFound unless @repository
+
+      render_pending_repository(@repository)
     end
   end
 
   def show
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
+    return render_pending_repository(@repository) if @repository.sync_pending?
+
     @repository.reconcile_async(request.remote_ip)
     fresh_when @repository, public: true
     @maintainers = @repository.issues.maintainers.group(:user).count.sort_by{|k,v| -v }

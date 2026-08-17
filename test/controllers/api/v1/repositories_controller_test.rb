@@ -132,6 +132,20 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert json['active_maintainers'].is_a?(Array)
   end
 
+  test 'show returns accepted while a repository is pending' do
+    repository = create_repository(@host, full_name: 'pending/repository', last_synced_at: nil)
+
+    get api_v1_host_repository_path(@host, repository), as: :json
+
+    assert_response :accepted
+    response_json = JSON.parse(response.body)
+    assert_equal 'pending', response_json['status']
+    assert_equal api_v1_host_repository_url(@host, repository), response_json['repository_url']
+    assert_equal api_v1_host_repository_issues_url(@host, repository), response_json['issues_url']
+    assert_equal '60', response.headers['Retry-After']
+    assert_includes response.headers['Cache-Control'], 'no-store'
+  end
+
   test 'show handles repository with different case' do
     get api_v1_host_repository_path(@host, @repository.full_name.upcase)
     assert_response :success
@@ -178,7 +192,40 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
       get api_v1_repositories_lookup_path, params: { url: url }
     end
     
-    assert_redirected_to api_v1_host_repository_path(@host, full_name)
+    assert_response :accepted
+    repository = @host.repositories.find_by!(full_name: full_name)
+    response_json = JSON.parse(response.body)
+    assert_equal 'pending', response_json['status']
+    assert_equal api_v1_host_repository_url(@host, repository), response_json['repository_url']
+    assert_equal api_v1_host_repository_issues_url(@host, repository), response_json['issues_url']
+    assert_equal '60', response.headers['Retry-After']
+    assert_includes response.headers['Cache-Control'], 'no-store'
+  end
+
+  test 'lookup returns accepted for a repository that has not synced' do
+    repository = create_repository(@host, full_name: 'pending/lookup-repository', last_synced_at: nil)
+    SyncIssuesWorker.expects(:perform_async).with(anything).returns('fake-job-id')
+
+    get api_v1_repositories_lookup_path, params: { url: repository.html_url }
+
+    assert_response :accepted
+    response_json = JSON.parse(response.body)
+    assert_equal 'pending', response_json['status']
+    assert_equal api_v1_host_repository_url(@host, repository), response_json['repository_url']
+    assert_equal api_v1_host_repository_issues_url(@host, repository), response_json['issues_url']
+  end
+
+  test 'lookup does not create a repository for a hidden owner' do
+    Owner.create!(host: @host, login: 'hidden-owner', hidden: true)
+    SyncIssuesWorker.expects(:perform_async).never
+
+    assert_no_difference 'Repository.count' do
+      get api_v1_repositories_lookup_path,
+        params: { url: 'https://github.com/hidden-owner/private-repository' },
+        as: :json
+    end
+
+    assert_response :not_found
   end
 
   test 'lookup does not sync recently synced repository' do

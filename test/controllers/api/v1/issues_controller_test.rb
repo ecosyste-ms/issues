@@ -20,6 +20,60 @@ class Api::V1::IssuesControllerTest < ActionDispatch::IntegrationTest
     assert json.size >= 3
   end
 
+  test 'index creates an unknown repository and returns accepted' do
+    SyncIssuesWorker.expects(:perform_async).with(anything).returns('fake-job-id')
+
+    assert_difference 'Repository.count', 1 do
+      get api_v1_host_repository_issues_path(@host, 'new/repository'), as: :json
+    end
+
+    assert_response :accepted
+    repository = @host.repositories.find_by!(full_name: 'new/repository')
+    response_json = JSON.parse(response.body)
+    assert_equal 'pending', response_json['status']
+    assert_equal api_v1_host_repository_url(@host, repository), response_json['repository_url']
+    assert_equal api_v1_host_repository_issues_url(@host, repository), response_json['issues_url']
+    assert_equal '60', response.headers['Retry-After']
+    assert_includes response.headers['Cache-Control'], 'no-store'
+    refute_match(/public|max-age|s-maxage/, response.headers['Cache-Control'])
+  end
+
+  test 'index returns accepted for an existing repository that has not synced' do
+    repository = create_repository(@host, full_name: 'pending/repository', last_synced_at: nil)
+    SyncIssuesWorker.expects(:perform_async).never
+
+    get api_v1_host_repository_issues_path(@host, repository), as: :json
+
+    assert_response :accepted
+    assert_equal 'pending', JSON.parse(response.body)['status']
+  end
+
+  test 'index returns success for a synced repository with no issues' do
+    repository = create_repository(
+      @host,
+      full_name: 'empty/repository',
+      last_synced_at: Time.current,
+      issues_count: 0,
+      pull_requests_count: 0
+    )
+
+    get api_v1_host_repository_issues_path(@host, repository), as: :json
+
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)
+  end
+
+  test 'index does not create a repository for a hidden owner' do
+    Owner.create!(host: @host, login: 'hidden-owner', hidden: true)
+    SyncIssuesWorker.expects(:perform_async).never
+
+    assert_no_difference 'Repository.count' do
+      get api_v1_host_repository_issues_path(@host, 'hidden-owner/private-repository'), as: :json
+    end
+
+    assert_response :not_found
+  end
+
   test 'index filters by created_after' do
     old_issue = create_issue(@repository, number: 200, created_at: 1.year.ago)
     new_issue = create_issue(@repository, number: 201, created_at: 1.day.ago)

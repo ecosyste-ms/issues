@@ -80,6 +80,10 @@ class Repository < ApplicationRecord
     host.kind.casecmp?('github')
   end
 
+  def sync_pending?
+    status.nil? && last_synced_at.nil?
+  end
+
   def sync_details
     conn = EcosystemsApiClient.client(repos_api_url)
     response = conn.get
