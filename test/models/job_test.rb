@@ -84,9 +84,11 @@ class JobTest < ActiveSupport::TestCase
     host = create_or_find_github_host
     repository = create(:repository, host: host, full_name: 'observablehq/notebook-kit')
     job = create(:job, url: repository.html_url)
+    reconciliation = mock
 
     Repository.any_instance.expects(:reconcile).raises(StandardError.new('GitHub unavailable'))
-    Repository.any_instance.expects(:clear_reconciliation).once
+    Repository.any_instance.expects(:reconciliation).returns(reconciliation)
+    reconciliation.expects(:clear).once
 
     assert_raises(StandardError) { job.sync_issues(full: true) }
   end

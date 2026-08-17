@@ -21,7 +21,9 @@ class RepositoryTest < ActiveSupport::TestCase
     host_api = mock
     host_api.expects(:load_issues).with(repository).yields([issue_data])
     host.expects(:host_instance).returns(host_api)
-    repository.expects(:mark_reconciled).once
+    reconciliation = repository.reconciliation
+    repository.stubs(:reconciliation).returns(reconciliation)
+    reconciliation.expects(:complete).once
 
     repository.sync_issues
 
@@ -127,7 +129,9 @@ class RepositoryTest < ActiveSupport::TestCase
     host_api = mock
     host_api.expects(:load_issues).with(repository, full: true).yields(issue_data)
     host.expects(:host_instance).returns(host_api)
-    repository.expects(:mark_reconciled).once
+    reconciliation = repository.reconciliation
+    repository.stubs(:reconciliation).returns(reconciliation)
+    reconciliation.expects(:complete).once
 
     repository.reconcile
 
@@ -135,98 +139,6 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_equal [21, 90, 91], repository.issues.where(user: 'mootari').order(:number).pluck(:number)
     assert_equal 3, repository.issues_count
     assert_empty repository.issues.maintainers.where(user: 'mootari')
-  end
-
-  test "reconcile_async enqueues one full sync" do
-    host = create_or_find_github_host
-    repository = create(:repository, host: host)
-    job = mock
-
-    repository.expects(:acquire_reconciliation_slot).with('127.0.0.1').returns(true)
-    Job.expects(:new).with(url: repository.html_url, status: 'pending', ip: '127.0.0.1').returns(job)
-    job.expects(:save).returns(true)
-    job.expects(:sync_issues_async).with(false, full: true).returns(true)
-
-    assert_equal job, repository.reconcile_async('127.0.0.1')
-  end
-
-  test "reconcile_async does not enqueue while reconciliation is pending or fresh" do
-    host = create_or_find_github_host
-    repository = create(:repository, host: host)
-
-    repository.expects(:acquire_reconciliation_slot).with('0.0.0.0').returns(false)
-    Job.expects(:new).never
-
-    assert_nil repository.reconcile_async
-  end
-
-  test "reconcile_async leaves a new repository to its initial full sync" do
-    host = create_or_find_github_host
-    repository = create(:repository, host: host, last_synced_at: nil)
-
-    repository.expects(:acquire_reconciliation_slot).never
-    Job.expects(:new).never
-
-    assert_nil repository.reconcile_async
-  end
-
-  test "reconciliation admission rate limits sources and caps pending jobs" do
-    host = create_or_find_github_host
-    repositories = 3.times.map { create(:repository, host: host) }
-    key_prefix = "issues:test:#{SecureRandom.hex}"
-    pending_key = "#{key_prefix}:pending"
-    source_keys = {
-      'source-a' => "#{key_prefix}:source:a",
-      'source-b' => "#{key_prefix}:source:b",
-      'source-c' => "#{key_prefix}:source:c",
-    }
-
-    repositories.each_with_index do |repository, index|
-      repository.stubs(:reconciliation_key).returns("#{key_prefix}:repository:#{index}")
-      repository.stubs(:reconciliation_pending_key).returns(pending_key)
-      source_keys.each do |source, key|
-        repository.stubs(:reconciliation_source_key).with(source).returns(key)
-      end
-      repository.stubs(:reconciliation_pending_ttl).returns(60)
-      repository.stubs(:reconciliation_pending_limit).returns(2)
-      repository.stubs(:reconciliation_source_interval).returns(60)
-      repository.stubs(:reconciliation_interval).returns(60)
-    end
-
-    REDIS.zadd(pending_key, 1, 'expired-repository')
-
-    assert repositories[0].acquire_reconciliation_slot('source-a')
-    assert_nil REDIS.zscore(pending_key, 'expired-repository')
-    assert_not repositories[1].acquire_reconciliation_slot('source-a')
-    assert repositories[1].acquire_reconciliation_slot('source-b')
-    assert_not repositories[2].acquire_reconciliation_slot('source-c')
-    assert_equal 2, REDIS.zcard(pending_key)
-
-    repositories[0].mark_reconciled
-
-    assert repositories[2].acquire_reconciliation_slot('source-c')
-    assert_equal 2, REDIS.zcard(pending_key)
-  ensure
-    REDIS.del(
-      pending_key,
-      *source_keys.values,
-      *repositories.each_index.map { |index| "#{key_prefix}:repository:#{index}" }
-    ) if key_prefix
-  end
-
-  test "reconcile_async clears its throttle when enqueueing fails" do
-    host = create_or_find_github_host
-    repository = create(:repository, host: host)
-    job = mock
-
-    repository.expects(:acquire_reconciliation_slot).returns(true)
-    repository.expects(:clear_reconciliation).once
-    Job.expects(:new).returns(job)
-    job.expects(:save).returns(true)
-    job.expects(:sync_issues_async).raises(StandardError.new('queue unavailable'))
-    Rails.logger.expects(:error).with("Failed to enqueue reconciliation for #{repository.full_name}: queue unavailable")
-
-    assert_nil repository.reconcile_async
   end
 
   test "issue_labels_count counts labels across issues" do

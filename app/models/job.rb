@@ -92,7 +92,7 @@ class Job < ApplicationRecord
     end
 
     unless response.success?
-      existing_repo&.clear_reconciliation if full
+      existing_repo&.reconciliation&.clear if full
       return nil
     end
     json = response.body
@@ -110,7 +110,8 @@ class Job < ApplicationRecord
     results = repo.as_json
     return results
   rescue
-    (repo || existing_repo)&.clear_reconciliation if full
+    reconciled_repository = repo || existing_repo
+    reconciled_repository&.reconciliation&.clear if full
     raise
   end
 end
