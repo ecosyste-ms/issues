@@ -60,6 +60,39 @@ class JobTest < ActiveSupport::TestCase
     assert_nil repo.status
   end
 
+  test "sync_issues reconciles an existing repository without the repos service" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host, full_name: 'observablehq/notebook-kit')
+    job = create(:job, url: repository.html_url)
+
+    Repository.any_instance.expects(:reconcile).once
+
+    assert_not_nil job.sync_issues(full: true)
+    assert_not_requested :get, /repos\.ecosyste\.ms/
+  end
+
+  test "sync_issues_async includes the full reconciliation worker argument" do
+    job = create(:job)
+    SyncIssuesWorker.expects(:perform_async).with(job.id, true).returns('full-sync-job-id')
+
+    job.sync_issues_async(false, full: true)
+
+    assert_equal 'full-sync-job-id', job.reload.sidekiq_id
+  end
+
+  test "failed full reconciliation clears the repository throttle" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host, full_name: 'observablehq/notebook-kit')
+    job = create(:job, url: repository.html_url)
+    reconciliation = mock
+
+    Repository.any_instance.expects(:reconcile).raises(StandardError.new('GitHub unavailable'))
+    Repository.any_instance.expects(:reconciliation).returns(reconciliation)
+    reconciliation.expects(:clear).once
+
+    assert_raises(StandardError) { job.sync_issues(full: true) }
+  end
+
   test "sync_issues returns nil for non-404 error responses" do
     job = create(:job, url: 'https://gitlab.com/test-org/test-repo')
 

@@ -64,26 +64,19 @@ module Hosts
       html_url(repository) + "/#{issue.pull_request ? 'pull' : 'issues'}/#{issue.number}"
     end
 
-    def load_issues(repository)
-      if repository.last_synced_at.present?
+    def load_issues(repository, full: false)
+      if repository.last_synced_at.present? && !full
         url = "#{api_client.api_endpoint}repos/#{repository.full_name}/issues?state=all&sort=updated&direction=desc&per_page=100&since=#{repository.last_synced_at}"
       else
         url = "#{api_client.api_endpoint}repos/#{repository.full_name}/issues?state=all&sort=created_at&direction=asc&per_page=100"
       end
 
       response = api_client.agent.call(:get, url, nil, {})
-      
-      mapped_issues = map_issues(response.data)
 
-      yield(mapped_issues)
-
-      while response && response.rels[:next]
-        response = response.rels[:next].get
-        
-        map_issues(response.data)
-
-        yield(mapped_issues)
-      end 
+      while response
+        yield(map_issues(response.data))
+        response = response.rels[:next]&.get
+      end
     end
 
     def map_issues(data)

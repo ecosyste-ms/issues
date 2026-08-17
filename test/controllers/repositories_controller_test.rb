@@ -5,6 +5,7 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
     @host = create_or_find_github_host
     @repository = create_or_find_rails_repository(@host)
     @user_ip = '127.0.0.1'
+    Repository.any_instance.stubs(:reconcile_async)
   end
 
   test 'should redirect index to host page' do
@@ -13,6 +14,8 @@ class RepositoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should show repository' do
+    Repository.any_instance.expects(:reconcile_async).with(@user_ip).once
+
     get host_repository_path(@host, @repository.full_name)
     assert_response :success
     assert_template 'repositories/show'

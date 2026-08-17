@@ -64,6 +64,22 @@ class Repository < ApplicationRecord
     end
   end
 
+  def reconcile_async(remote_ip = '0.0.0.0', priority = false)
+    reconciliation.enqueue(remote_ip, priority)
+  end
+
+  def reconcile
+    reconciliation.perform
+  end
+
+  def reconciliation
+    Repository::Reconciliation.new(self)
+  end
+
+  def github?
+    host.kind.casecmp?('github')
+  end
+
   def sync_details
     conn = EcosystemsApiClient.client(repos_api_url)
     response = conn.get
@@ -141,9 +157,10 @@ class Repository < ApplicationRecord
     issues.where(pull_request: true).past_year.group(:user).count.sort_by{|k,v| -v }
   end
 
-  def sync_issues
-    host.host_instance.load_issues(self) do |data|
-      return if data.empty?
+  def sync_issues(full: false)
+    full_reconciliation = full || (github? && last_synced_at.blank?)
+    process_page = proc do |data|
+      next if data.empty?
       
       issues_data = data.map do |issue|
         time_to_close = if issue[:closed_at].present? && issue[:created_at].present?
@@ -172,9 +189,18 @@ class Repository < ApplicationRecord
       )
     end
 
+    host_loader = host.host_instance
+    if full
+      host_loader.load_issues(self, full: true, &process_page)
+    else
+      host_loader.load_issues(self, &process_page)
+    end
+
     issues.reset
     update_issue_counts
+    reconciliation.complete if full_reconciliation
   rescue => e
+    reconciliation.clear if full_reconciliation
     self.status = 'error'
     self.last_synced_at = Time.now
     self.save

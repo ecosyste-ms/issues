@@ -41,6 +41,8 @@ class RepositoriesController < ApplicationController
     owner = Owner.find_by(host: @host, login: @repository.owner)
     raise ActiveRecord::RecordNotFound if owner&.hidden?
 
+    @repository.reconcile_async(request.remote_ip)
+
     @hidden_users = hidden_users_for(@repository)
 
     @maintainers = @repository.issues.maintainers.group(:user).count
