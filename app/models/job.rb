@@ -30,25 +30,34 @@ class Job < ApplicationRecord
     ['complete', 'error'].include?(status)
   end
 
-  def sync_issues_async(priority = false)
+  def sync_issues_async(priority = false, full: false)
     if priority
-      sidekiq_id = SyncIssuesWorker.perform_with_priority(id, priority)
+      sidekiq_id = if full
+        SyncIssuesWorker.perform_with_priority(id, priority, true)
+      else
+        SyncIssuesWorker.perform_with_priority(id, priority)
+      end
+    elsif full
+      sidekiq_id = SyncIssuesWorker.perform_async(id, true)
     else
       sidekiq_id = SyncIssuesWorker.perform_async(id)
     end
     update(sidekiq_id: sidekiq_id)
   end
 
-  def perform_issue_syncing
+  def perform_issue_syncing(full = false)
     begin
-      results = sync_issues
+      results = full ? sync_issues(full: true) : sync_issues
       update!(results: results, status: 'complete')      
     rescue => e
       update(results: {error: e.inspect}, status: 'error')
     end
   end
 
-  def sync_issues
+  def sync_issues(full: false)
+    existing_repo = nil
+    repo = nil
+
     # Check if repository already marked as not_found
     parsed_url = Addressable::URI.parse(url)
     domain = parsed_url.host
@@ -61,6 +70,11 @@ class Job < ApplicationRecord
       if existing_repo&.status == 'not_found'
         raise "Repository #{full_name} is marked as not_found"
       end
+    end
+
+    if full && existing_repo
+      existing_repo.reconcile
+      return existing_repo.as_json
     end
 
     # TODO don't depend on the repos service being up
@@ -77,16 +91,26 @@ class Job < ApplicationRecord
       raise "Repository not found in repos service: #{url}"
     end
 
-    return nil unless response.success?
+    unless response.success?
+      existing_repo&.clear_reconciliation if full
+      return nil
+    end
     json = response.body
 
     host = Host.find_by(name: json['host']['name'])
     repo = host.repositories.find_by('lower(full_name) = ?', json['full_name'].downcase)
     repo = host.repositories.create(full_name: json['full_name']) if repo.nil?
 
-    repo.sync_issues
+    if full
+      repo.reconcile
+    else
+      repo.sync_issues
+    end
 
     results = repo.as_json
     return results
+  rescue
+    (repo || existing_repo)&.clear_reconciliation if full
+    raise
   end
 end

@@ -21,6 +21,7 @@ class RepositoryTest < ActiveSupport::TestCase
     host_api = mock
     host_api.expects(:load_issues).with(repository).yields([issue_data])
     host.expects(:host_instance).returns(host_api)
+    repository.expects(:mark_reconciled).once
 
     repository.sync_issues
 
@@ -108,6 +109,82 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_in_delta expected_time_to_close, issue.time_to_close, 0.001
   end
 
+  test "reconcile inserts missing issues and refreshes author associations" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host, full_name: 'observablehq/notebook-kit')
+    create(
+      :issue,
+      repository: repository,
+      host: host,
+      uuid: '90',
+      number: 90,
+      user: 'mootari',
+      author_association: 'MEMBER',
+      created_at: 1.month.ago
+    )
+
+    issue_data = [21, 90, 91].map { |number| reconciled_issue_data(number) }
+    host_api = mock
+    host_api.expects(:load_issues).with(repository, full: true).yields(issue_data)
+    host.expects(:host_instance).returns(host_api)
+    repository.expects(:mark_reconciled).once
+
+    repository.reconcile
+
+    repository.reload
+    assert_equal [21, 90, 91], repository.issues.where(user: 'mootari').order(:number).pluck(:number)
+    assert_equal 3, repository.issues_count
+    assert_empty repository.issues.maintainers.where(user: 'mootari')
+  end
+
+  test "reconcile_async enqueues one full sync" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host)
+    job = mock
+
+    REDIS.expects(:set).with(repository.reconciliation_key, 'pending', nx: true, ex: 1.day.to_i).returns(true)
+    Job.expects(:new).with(url: repository.html_url, status: 'pending', ip: '127.0.0.1').returns(job)
+    job.expects(:save).returns(true)
+    job.expects(:sync_issues_async).with(false, full: true).returns(true)
+
+    assert_equal job, repository.reconcile_async('127.0.0.1')
+  end
+
+  test "reconcile_async does not enqueue while reconciliation is pending or fresh" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host)
+
+    REDIS.expects(:set).with(repository.reconciliation_key, 'pending', nx: true, ex: 1.day.to_i).returns(false)
+    Job.expects(:new).never
+
+    assert_nil repository.reconcile_async
+  end
+
+  test "reconcile_async leaves a new repository to its initial full sync" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host, last_synced_at: nil)
+
+    REDIS.expects(:set).never
+    Job.expects(:new).never
+
+    assert_nil repository.reconcile_async
+  end
+
+  test "reconcile_async clears its throttle when enqueueing fails" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host)
+    job = mock
+
+    REDIS.expects(:set).returns(true)
+    REDIS.expects(:del).with(repository.reconciliation_key).once
+    Job.expects(:new).returns(job)
+    job.expects(:save).returns(true)
+    job.expects(:sync_issues_async).raises(StandardError.new('queue unavailable'))
+    Rails.logger.expects(:error).with("Failed to enqueue reconciliation for #{repository.full_name}: queue unavailable")
+
+    assert_nil repository.reconcile_async
+  end
+
   test "issue_labels_count counts labels across issues" do
     host = create(:host)
     repository = create(:repository, host: host)
@@ -175,5 +252,27 @@ class RepositoryTest < ActiveSupport::TestCase
     result = repository.pull_request_authors.to_h
     assert_nil result['issue_author']
     assert_equal 1, result['pr_author']
+  end
+
+  def reconciled_issue_data(number)
+    {
+      uuid: number.to_s,
+      node_id: "node-#{number}",
+      number: number,
+      state: 'closed',
+      title: "Issue #{number}",
+      locked: false,
+      comments_count: 0,
+      created_at: 1.month.ago,
+      updated_at: Time.current,
+      closed_at: 1.day.ago,
+      user: 'mootari',
+      labels: [],
+      assignees: [],
+      pull_request: false,
+      author_association: 'NONE',
+      state_reason: 'completed',
+      merged_at: nil
+    }
   end
 end

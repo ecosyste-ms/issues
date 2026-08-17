@@ -41,6 +41,7 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
 
   def show
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:id].downcase)
+    @repository.reconcile_async(request.remote_ip)
     fresh_when @repository, public: true
     @maintainers = @repository.issues.maintainers.group(:user).count.sort_by{|k,v| -v }
     @active_maintainers = @repository.issues.maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }

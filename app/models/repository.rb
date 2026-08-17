@@ -64,6 +64,59 @@ class Repository < ApplicationRecord
     end
   end
 
+  def reconcile_async(remote_ip = '0.0.0.0', priority = false)
+    return unless github?
+    return if last_synced_at.blank?
+    return unless REDIS.set(reconciliation_key, 'pending', nx: true, ex: reconciliation_pending_ttl)
+
+    job = Job.new(url: html_url, status: 'pending', ip: remote_ip)
+    unless job.save
+      clear_reconciliation
+      return
+    end
+
+    job.sync_issues_async(priority, full: true)
+    job
+  rescue => e
+    begin
+      clear_reconciliation
+    rescue => redis_error
+      Rails.logger.error "Failed to clear reconciliation throttle for #{full_name}: #{redis_error.message}"
+    end
+    Rails.logger.error "Failed to enqueue reconciliation for #{full_name}: #{e.message}"
+    nil
+  end
+
+  def reconcile
+    raise ArgumentError, 'Full reconciliation is only supported for GitHub repositories' unless github?
+
+    sync_issues(full: true)
+  end
+
+  def github?
+    host.kind.casecmp?('github')
+  end
+
+  def reconciliation_key
+    "issues:repository:#{id}:reconciled"
+  end
+
+  def reconciliation_pending_ttl
+    1.day.to_i
+  end
+
+  def reconciliation_interval
+    ENV.fetch('GITHUB_RECONCILIATION_INTERVAL_DAYS', '30').to_i.clamp(1, 365).days.to_i
+  end
+
+  def mark_reconciled
+    REDIS.set(reconciliation_key, Time.current.iso8601, ex: reconciliation_interval)
+  end
+
+  def clear_reconciliation
+    REDIS.del(reconciliation_key)
+  end
+
   def sync_details
     conn = EcosystemsApiClient.client(repos_api_url)
     response = conn.get
@@ -141,9 +194,10 @@ class Repository < ApplicationRecord
     issues.where(pull_request: true).past_year.group(:user).count.sort_by{|k,v| -v }
   end
 
-  def sync_issues
-    host.host_instance.load_issues(self) do |data|
-      return if data.empty?
+  def sync_issues(full: false)
+    full_reconciliation = full || (github? && last_synced_at.blank?)
+    process_page = proc do |data|
+      next if data.empty?
       
       issues_data = data.map do |issue|
         time_to_close = if issue[:closed_at].present? && issue[:created_at].present?
@@ -172,9 +226,18 @@ class Repository < ApplicationRecord
       )
     end
 
+    host_loader = host.host_instance
+    if full
+      host_loader.load_issues(self, full: true, &process_page)
+    else
+      host_loader.load_issues(self, &process_page)
+    end
+
     issues.reset
     update_issue_counts
+    mark_reconciled if full_reconciliation
   rescue => e
+    clear_reconciliation if full_reconciliation
     self.status = 'error'
     self.last_synced_at = Time.now
     self.save

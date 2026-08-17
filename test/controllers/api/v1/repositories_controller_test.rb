@@ -6,6 +6,7 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
     @repository = create_or_find_rails_repository(@host)
     # Update last_synced_at to force sync
     @repository.update!(last_synced_at: 2.days.ago)
+    Repository.any_instance.stubs(:reconcile_async)
   end
 
   test 'lookup with priority queues to high_priority queue' do
@@ -115,6 +116,8 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'show returns repository details' do
+    Repository.any_instance.expects(:reconcile_async).with('127.0.0.1').once
+
     get api_v1_host_repository_path(@host, @repository.full_name)
     assert_response :success
     
