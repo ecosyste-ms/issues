@@ -2,10 +2,13 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
   before_action :find_host
 
   def index
+    repository_parts = params[:repository_id].split('/', -1)
+    raise ActiveRecord::RecordNotFound if repository_parts.size < 2 || repository_parts.any?(&:blank?)
+
     @repository = @host.repositories.find_by('lower(full_name) = ?', params[:repository_id].downcase)
 
     unless @repository
-      owner = params[:repository_id].split('/').first
+      owner = repository_parts.first
       raise ActiveRecord::RecordNotFound if @host.owner_hidden?(owner)
 
       @host.sync_repository_async(params[:repository_id], request.remote_ip, params[:priority].present?)
