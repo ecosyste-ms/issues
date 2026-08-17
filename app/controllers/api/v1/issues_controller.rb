@@ -2,7 +2,18 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
   before_action :find_host
 
   def index
-    @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
+    @repository = @host.repositories.find_by('lower(full_name) = ?', params[:repository_id].downcase)
+
+    unless @repository
+      owner = params[:repository_id].split('/').first
+      raise ActiveRecord::RecordNotFound if @host.owner_hidden?(owner)
+
+      @host.sync_repository_async(params[:repository_id], request.remote_ip, params[:priority].present?)
+      @repository = @host.repositories.find_by('lower(full_name) = ?', params[:repository_id].downcase)
+      raise ActiveRecord::RecordNotFound unless @repository
+    end
+
+    return render_pending_repository(@repository) if @repository.sync_pending?
 
     scope = @repository.issues
 

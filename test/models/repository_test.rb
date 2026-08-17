@@ -1,6 +1,24 @@
 require 'test_helper'
 
 class RepositoryTest < ActiveSupport::TestCase
+  test "sync_pending? is true before a repository completes its first sync" do
+    repository = create(:repository, last_synced_at: nil)
+
+    assert_predicate repository, :sync_pending?
+  end
+
+  test "sync_pending? is false for a synced repository with no issues" do
+    repository = create(:repository, last_synced_at: Time.current, issues_count: 0, pull_requests_count: 0)
+
+    refute_predicate repository, :sync_pending?
+  end
+
+  test "sync_pending? is false for a repository with a terminal status" do
+    repository = create(:repository, status: 'not_found', last_synced_at: nil)
+
+    refute_predicate repository, :sync_pending?
+  end
+
   test "successful issue sync leaves repository active and visible" do
     host = create(:host)
     repository = create(:repository, host: host, status: 'error', last_synced_at: nil)
