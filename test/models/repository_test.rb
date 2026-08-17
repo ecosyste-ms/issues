@@ -142,7 +142,7 @@ class RepositoryTest < ActiveSupport::TestCase
     repository = create(:repository, host: host)
     job = mock
 
-    REDIS.expects(:set).with(repository.reconciliation_key, 'pending', nx: true, ex: 1.day.to_i).returns(true)
+    repository.expects(:acquire_reconciliation_slot).with('127.0.0.1').returns(true)
     Job.expects(:new).with(url: repository.html_url, status: 'pending', ip: '127.0.0.1').returns(job)
     job.expects(:save).returns(true)
     job.expects(:sync_issues_async).with(false, full: true).returns(true)
@@ -154,7 +154,7 @@ class RepositoryTest < ActiveSupport::TestCase
     host = create_or_find_github_host
     repository = create(:repository, host: host)
 
-    REDIS.expects(:set).with(repository.reconciliation_key, 'pending', nx: true, ex: 1.day.to_i).returns(false)
+    repository.expects(:acquire_reconciliation_slot).with('0.0.0.0').returns(false)
     Job.expects(:new).never
 
     assert_nil repository.reconcile_async
@@ -164,10 +164,54 @@ class RepositoryTest < ActiveSupport::TestCase
     host = create_or_find_github_host
     repository = create(:repository, host: host, last_synced_at: nil)
 
-    REDIS.expects(:set).never
+    repository.expects(:acquire_reconciliation_slot).never
     Job.expects(:new).never
 
     assert_nil repository.reconcile_async
+  end
+
+  test "reconciliation admission rate limits sources and caps pending jobs" do
+    host = create_or_find_github_host
+    repositories = 3.times.map { create(:repository, host: host) }
+    key_prefix = "issues:test:#{SecureRandom.hex}"
+    pending_key = "#{key_prefix}:pending"
+    source_keys = {
+      'source-a' => "#{key_prefix}:source:a",
+      'source-b' => "#{key_prefix}:source:b",
+      'source-c' => "#{key_prefix}:source:c",
+    }
+
+    repositories.each_with_index do |repository, index|
+      repository.stubs(:reconciliation_key).returns("#{key_prefix}:repository:#{index}")
+      repository.stubs(:reconciliation_pending_key).returns(pending_key)
+      source_keys.each do |source, key|
+        repository.stubs(:reconciliation_source_key).with(source).returns(key)
+      end
+      repository.stubs(:reconciliation_pending_ttl).returns(60)
+      repository.stubs(:reconciliation_pending_limit).returns(2)
+      repository.stubs(:reconciliation_source_interval).returns(60)
+      repository.stubs(:reconciliation_interval).returns(60)
+    end
+
+    REDIS.zadd(pending_key, 1, 'expired-repository')
+
+    assert repositories[0].acquire_reconciliation_slot('source-a')
+    assert_nil REDIS.zscore(pending_key, 'expired-repository')
+    assert_not repositories[1].acquire_reconciliation_slot('source-a')
+    assert repositories[1].acquire_reconciliation_slot('source-b')
+    assert_not repositories[2].acquire_reconciliation_slot('source-c')
+    assert_equal 2, REDIS.zcard(pending_key)
+
+    repositories[0].mark_reconciled
+
+    assert repositories[2].acquire_reconciliation_slot('source-c')
+    assert_equal 2, REDIS.zcard(pending_key)
+  ensure
+    REDIS.del(
+      pending_key,
+      *source_keys.values,
+      *repositories.each_index.map { |index| "#{key_prefix}:repository:#{index}" }
+    ) if key_prefix
   end
 
   test "reconcile_async clears its throttle when enqueueing fails" do
@@ -175,8 +219,8 @@ class RepositoryTest < ActiveSupport::TestCase
     repository = create(:repository, host: host)
     job = mock
 
-    REDIS.expects(:set).returns(true)
-    REDIS.expects(:del).with(repository.reconciliation_key).once
+    repository.expects(:acquire_reconciliation_slot).returns(true)
+    repository.expects(:clear_reconciliation).once
     Job.expects(:new).returns(job)
     job.expects(:save).returns(true)
     job.expects(:sync_issues_async).raises(StandardError.new('queue unavailable'))

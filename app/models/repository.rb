@@ -1,4 +1,29 @@
+require 'digest'
+
 class Repository < ApplicationRecord
+  RECONCILIATION_ADMISSION_SCRIPT = <<~LUA.freeze
+    redis.call('ZREMRANGEBYSCORE', KEYS[2], '-inf', ARGV[1])
+
+    if redis.call('EXISTS', KEYS[1]) == 1 then
+      return 0
+    end
+
+    if redis.call('EXISTS', KEYS[3]) == 1 then
+      return 0
+    end
+
+    if redis.call('ZCARD', KEYS[2]) >= tonumber(ARGV[3]) then
+      return 0
+    end
+
+    redis.call('SET', KEYS[1], 'pending', 'EX', ARGV[2])
+    redis.call('SET', KEYS[3], ARGV[4], 'EX', ARGV[5])
+    redis.call('ZADD', KEYS[2], tonumber(ARGV[1]) + tonumber(ARGV[2]), ARGV[4])
+    redis.call('EXPIRE', KEYS[2], ARGV[2])
+
+    return 1
+  LUA
+
   def self.sortable_columns
     {
       'last_synced_at' => 'last_synced_at',
@@ -67,7 +92,7 @@ class Repository < ApplicationRecord
   def reconcile_async(remote_ip = '0.0.0.0', priority = false)
     return unless github?
     return if last_synced_at.blank?
-    return unless REDIS.set(reconciliation_key, 'pending', nx: true, ex: reconciliation_pending_ttl)
+    return unless acquire_reconciliation_slot(remote_ip)
 
     job = Job.new(url: html_url, status: 'pending', ip: remote_ip)
     unless job.save
@@ -98,23 +123,56 @@ class Repository < ApplicationRecord
   end
 
   def reconciliation_key
-    "issues:repository:#{id}:reconciled"
+    "issues:{github-reconciliations}:repository:#{id}"
+  end
+
+  def reconciliation_pending_key
+    'issues:{github-reconciliations}:pending'
+  end
+
+  def reconciliation_source_key(remote_ip)
+    digest = Digest::SHA256.hexdigest(remote_ip.to_s)
+    "issues:{github-reconciliations}:source:#{digest}"
   end
 
   def reconciliation_pending_ttl
     1.day.to_i
   end
 
+  def reconciliation_pending_limit
+    ENV.fetch('GITHUB_RECONCILIATION_PENDING_LIMIT', '20').to_i.clamp(1, 100)
+  end
+
+  def reconciliation_source_interval
+    ENV.fetch('GITHUB_RECONCILIATION_SOURCE_INTERVAL_SECONDS', '300').to_i.clamp(1, 1.day.to_i)
+  end
+
   def reconciliation_interval
     ENV.fetch('GITHUB_RECONCILIATION_INTERVAL_DAYS', '30').to_i.clamp(1, 365).days.to_i
   end
 
+  def acquire_reconciliation_slot(remote_ip)
+    now = Time.current.to_i
+    result = REDIS.eval(
+      RECONCILIATION_ADMISSION_SCRIPT,
+      keys: [reconciliation_key, reconciliation_pending_key, reconciliation_source_key(remote_ip)],
+      argv: [now, reconciliation_pending_ttl, reconciliation_pending_limit, id, reconciliation_source_interval]
+    )
+    result == 1
+  end
+
   def mark_reconciled
     REDIS.set(reconciliation_key, Time.current.iso8601, ex: reconciliation_interval)
+    release_reconciliation_slot
   end
 
   def clear_reconciliation
     REDIS.del(reconciliation_key)
+    release_reconciliation_slot
+  end
+
+  def release_reconciliation_slot
+    REDIS.zrem(reconciliation_pending_key, id)
   end
 
   def sync_details
