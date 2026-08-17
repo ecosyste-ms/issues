@@ -1,5 +1,7 @@
 class ErrorsController < ApplicationController
   def not_found
+    response.cache_control.replace(no_store: true)
+
     respond_to do |format|
       format.html { render status: :not_found }
       format.json { render json: { error: "not found" }, status: :not_found }

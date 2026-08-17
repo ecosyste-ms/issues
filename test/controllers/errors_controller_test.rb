@@ -1,10 +1,12 @@
 require 'test_helper'
 
 class ErrorsControllerTest < ActionDispatch::IntegrationTest
-  test 'renders 404' do
+  test 'renders 404 without caching it' do
     get '/404'
     assert_response :not_found
     assert_template 'errors/not_found'
+    assert_includes response.headers['Cache-Control'], 'no-store'
+    refute_match(/public|max-age|s-maxage/, response.headers['Cache-Control'])
   end
 
   test 'renders 422' do
