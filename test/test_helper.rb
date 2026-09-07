@@ -6,8 +6,7 @@ require 'webmock/minitest'
 require 'mocha/minitest'
 
 require 'sidekiq_unique_jobs/testing'
-require 'sidekiq/testing'
-Sidekiq::Testing.fake!
+Sidekiq.testing!(:fake)
 
 require_relative 'support/test_data_helpers'
 
