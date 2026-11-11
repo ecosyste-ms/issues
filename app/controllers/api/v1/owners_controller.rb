@@ -8,6 +8,7 @@ class Api::V1::OwnersController < Api::V1::ApplicationController
 
   def show
     @owner = params[:id]
+    raise ActiveRecord::RecordNotFound if @host.owner_hidden?(@owner)
     hidden = @host.hidden_logins
 
     @issues_count = @host.issues.owner(@owner).where(pull_request: false).count
@@ -39,6 +40,7 @@ class Api::V1::OwnersController < Api::V1::ApplicationController
 
   def maintainers
     @owner = params[:id]
+    raise ActiveRecord::RecordNotFound if @host.owner_hidden?(@owner)
     hidden = @host.hidden_logins
 
     @maintainers = @host.issues.owner(@owner).not_by(hidden).maintainers.group(:user).count.sort_by{|k,v| -v }

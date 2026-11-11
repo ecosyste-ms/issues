@@ -177,6 +177,20 @@ class Api::V1::OwnersControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, 'hidden-author'
   end
 
+  test 'show returns not found for a hidden owner' do
+    Owner.create!(host: @host, login: 'Hidden-Owner', hidden: true)
+
+    get api_v1_host_owner_path(@host, 'hidden-owner'), as: :json
+    assert_response :not_found
+  end
+
+  test 'maintainers endpoint returns not found for a hidden owner' do
+    Owner.create!(host: @host, login: 'Hidden-Owner', hidden: true)
+
+    get maintainers_api_v1_host_owner_path(@host, 'hidden-owner'), as: :json
+    assert_response :not_found
+  end
+
   test 'show handles owner with no issues' do
     owner_with_no_issues = 'newowner'
     create_repository(@host, full_name: "#{owner_with_no_issues}/empty-repo", owner: owner_with_no_issues)
