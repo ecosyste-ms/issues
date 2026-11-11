@@ -111,6 +111,10 @@ class Host < ApplicationRecord
     owners.where(hidden: true).where('lower(login) = ?', login.downcase).exists?
   end
 
+  def hidden_logins
+    owners.hidden.pluck(:login)
+  end
+
   def sync_repository_async(full_name, remote_ip = '0.0.0.0', priority = false)
     return nil unless can_be_indexed?
     return nil if owner_hidden?(full_name.split('/').first)

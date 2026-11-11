@@ -3,6 +3,7 @@ class Api::V1::AuthorsController < Api::V1::ApplicationController
 
   def show
     @author = params[:id]
+    raise ActiveRecord::RecordNotFound if @host.owner_hidden?(@author)
 
     @issues_count = @host.issues.where(user: params[:id], pull_request: false).count
     @pull_requests_count = @host.issues.where(user: params[:id], pull_request: true).count
@@ -28,7 +29,8 @@ class Api::V1::AuthorsController < Api::V1::ApplicationController
   end
 
   def index
-    @scope = @host.issues.group(:user).count.sort_by{|k,v| -v }
+    hidden = @host.hidden_logins.map(&:downcase).to_set
+    @scope = @host.issues.group(:user).count.reject { |user, _| hidden.include?(user.to_s.downcase) }.sort_by{|k,v| -v }
     @pagy, @authors = pagy_array(@scope)
   end
 end

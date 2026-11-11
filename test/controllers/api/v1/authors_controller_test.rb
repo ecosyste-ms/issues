@@ -117,6 +117,26 @@ class Api::V1::AuthorsControllerTest < ActionDispatch::IntegrationTest
     assert json['active_maintaining'].is_a?(Array)
   end
 
+  test 'show returns not found for a hidden author' do
+    Owner.create!(host: @host, login: 'Hidden-Author', hidden: true)
+    create_issue(@repository, user: 'hidden-author', number: 750)
+
+    get api_v1_host_author_path(@host, 'hidden-author'), as: :json
+    assert_response :not_found
+  end
+
+  test 'index omits hidden authors' do
+    Owner.create!(host: @host, login: 'Hidden-Author', hidden: true)
+    create_issue(@repository, user: 'hidden-author', number: 760)
+
+    get api_v1_host_authors_path(@host), as: :json
+    assert_response :success
+
+    logins = JSON.parse(response.body).map { |a| a['login'] }
+    assert_includes logins, @author
+    assert_not_includes logins, 'hidden-author'
+  end
+
   test 'show handles author with no issues' do
     author_with_no_issues = 'newauthor'
     

@@ -132,6 +132,19 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert json['active_maintainers'].is_a?(Array)
   end
 
+  test 'show omits hidden users from authors and maintainers' do
+    Owner.create!(host: @host, login: 'Hidden-Author', hidden: true)
+    create_issue(@repository, user: 'hidden-author', number: 850, author_association: 'MEMBER')
+    create_pull_request(@repository, user: 'hidden-author', number: 851)
+    create_issue(@repository, user: 'maintainer1', number: 852, author_association: 'MEMBER')
+
+    get api_v1_host_repository_path(@host, @repository.full_name)
+    assert_response :success
+
+    assert_includes response.body, 'maintainer1'
+    assert_not_includes response.body, 'hidden-author'
+  end
+
   test 'show returns accepted while a repository is pending' do
     repository = create_repository(@host, full_name: 'pending/repository', last_synced_at: nil)
 

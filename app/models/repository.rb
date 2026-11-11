@@ -145,20 +145,25 @@ class Repository < ApplicationRecord
     issues.where(pull_request: true).past_year.with_author_association.group(:author_association).count.sort_by{|k,v| -v }
   end
 
+  def visible_issues
+    @hidden_logins ||= host.hidden_logins
+    issues.not_by(@hidden_logins)
+  end
+
   def issue_authors
-    issues.where(pull_request: false).group(:user).count.sort_by{|k,v| -v }
+    visible_issues.where(pull_request: false).group(:user).count.sort_by{|k,v| -v }
   end
 
   def pull_request_authors
-    issues.where(pull_request: true).group(:user).count.sort_by{|k,v| -v }
+    visible_issues.where(pull_request: true).group(:user).count.sort_by{|k,v| -v }
   end
 
   def past_year_issue_authors
-    issues.where(pull_request: false).past_year.group(:user).count.sort_by{|k,v| -v }
+    visible_issues.where(pull_request: false).past_year.group(:user).count.sort_by{|k,v| -v }
   end
 
   def past_year_pull_request_authors
-    issues.where(pull_request: true).past_year.group(:user).count.sort_by{|k,v| -v }
+    visible_issues.where(pull_request: true).past_year.group(:user).count.sort_by{|k,v| -v }
   end
 
   def sync_issues(full: false)

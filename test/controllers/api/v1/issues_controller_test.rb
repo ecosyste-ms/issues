@@ -74,6 +74,41 @@ class Api::V1::IssuesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test 'index omits issues by a hidden author' do
+    Owner.create!(host: @host, login: 'Hidden-Author', hidden: true)
+    create_issue(@repository, number: 150, user: 'hidden-author')
+    create_issue(@repository, number: 151, user: 'visible-author')
+    create_issue(@repository, number: 152, user: nil)
+
+    get api_v1_host_repository_issues_path(@host, @repository), as: :json
+    assert_response :success
+
+    numbers = JSON.parse(response.body).map { |i| i['number'] }
+    assert_not_includes numbers, 150
+    assert_includes numbers, 151
+    assert_includes numbers, 152
+    assert_not_includes response.body.downcase, 'hidden-author'
+  end
+
+  test 'index omits hidden logins from assignees' do
+    Owner.create!(host: @host, login: 'Hidden-Author', hidden: true)
+    create_issue(@repository, number: 155, user: 'visible-author', assignees: ['hidden-author', 'someone-else'])
+
+    get api_v1_host_repository_issues_path(@host, @repository), as: :json
+    assert_response :success
+
+    issue = JSON.parse(response.body).find { |i| i['number'] == 155 }
+    assert_equal ['someone-else'], issue['assignees']
+  end
+
+  test 'show returns not found for an issue by a hidden author' do
+    Owner.create!(host: @host, login: 'hidden-author', hidden: true)
+    create_issue(@repository, number: 160, user: 'hidden-author')
+
+    get api_v1_host_repository_issue_path(@host, @repository, 160), as: :json
+    assert_response :not_found
+  end
+
   test 'index does not create a repository for an incomplete repository path' do
     SyncIssuesWorker.expects(:perform_async).never
 

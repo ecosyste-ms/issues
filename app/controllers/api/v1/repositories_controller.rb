@@ -50,8 +50,8 @@ class Api::V1::RepositoriesController < Api::V1::ApplicationController
 
     @repository.reconcile_async(request.remote_ip)
     fresh_when @repository, public: true
-    @maintainers = @repository.issues.maintainers.group(:user).count.sort_by{|k,v| -v }
-    @active_maintainers = @repository.issues.maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
+    @maintainers = @repository.visible_issues.maintainers.group(:user).count.sort_by{|k,v| -v }
+    @active_maintainers = @repository.visible_issues.maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
   end
 
   def ping
