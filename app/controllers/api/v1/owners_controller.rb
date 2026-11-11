@@ -8,6 +8,7 @@ class Api::V1::OwnersController < Api::V1::ApplicationController
 
   def show
     @owner = params[:id]
+    hidden = @host.hidden_logins
 
     @issues_count = @host.issues.owner(@owner).where(pull_request: false).count
     @pull_requests_count = @host.issues.owner(@owner).where(pull_request: true).count
@@ -28,19 +29,20 @@ class Api::V1::OwnersController < Api::V1::ApplicationController
     @issue_labels_count = @host.issues.owner(@owner).where(pull_request: false).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
     @pull_request_labels_count = @host.issues.owner(@owner).where(pull_request: true).pluck(:labels).flatten.compact.group_by(&:itself).map{|k,v| [k, v.count]}.to_h.sort_by{|k,v| -v}
 
-    @issue_authors = @host.issues.owner(@owner).where(pull_request: false).group(:user).count.sort_by{|k,v| -v }.first(15)
-    @pull_request_authors = @host.issues.owner(@owner).where(pull_request: true).group(:user).count.sort_by{|k,v| -v }.first(15)
+    @issue_authors = @host.issues.owner(@owner).not_by(hidden).where(pull_request: false).group(:user).count.sort_by{|k,v| -v }.first(15)
+    @pull_request_authors = @host.issues.owner(@owner).not_by(hidden).where(pull_request: true).group(:user).count.sort_by{|k,v| -v }.first(15)
 
-    @maintainers = @host.issues.owner(@owner).maintainers.group(:user).count.sort_by{|k,v| -v }
-    @active_maintainers = @host.issues.owner(@owner).maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
+    @maintainers = @host.issues.owner(@owner).not_by(hidden).maintainers.group(:user).count.sort_by{|k,v| -v }
+    @active_maintainers = @host.issues.owner(@owner).not_by(hidden).maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
 
   end
 
   def maintainers
     @owner = params[:id]
+    hidden = @host.hidden_logins
 
-    @maintainers = @host.issues.owner(@owner).maintainers.group(:user).count.sort_by{|k,v| -v }
-    @active_maintainers = @host.issues.owner(@owner).maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
+    @maintainers = @host.issues.owner(@owner).not_by(hidden).maintainers.group(:user).count.sort_by{|k,v| -v }
+    @active_maintainers = @host.issues.owner(@owner).not_by(hidden).maintainers.where('issues.created_at > ?', 1.year.ago).group(:user).count.sort_by{|k,v| -v }
 
     expires_in 1.day, public: true
   end

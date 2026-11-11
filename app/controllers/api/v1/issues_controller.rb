@@ -18,7 +18,8 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
 
     return render_pending_repository(@repository) if @repository.sync_pending?
 
-    scope = @repository.issues
+    @hidden_logins = @host.hidden_logins
+    scope = @repository.issues.not_by(@hidden_logins)
 
     scope = scope.created_after(params[:created_after]) if params[:created_after].present?
     scope = scope.updated_after(params[:updated_after]) if params[:updated_after].present?
@@ -42,7 +43,8 @@ class Api::V1::IssuesController < Api::V1::ApplicationController
 
   def show
     @repository = @host.repositories.find_by!('lower(full_name) = ?', params[:repository_id].downcase)
-    @issue = @repository.issues.find_by!(number: params[:id])
+    @hidden_logins = @host.hidden_logins
+    @issue = @repository.issues.not_by(@hidden_logins).find_by!(number: params[:id])
     fresh_when @issue, public: true
   end
 

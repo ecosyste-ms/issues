@@ -18,10 +18,16 @@ class Issue < ApplicationRecord
   scope :issue, -> { where(pull_request: false) }
 
   scope :user, ->(user) { where(user: user) }
+  scope :not_by, ->(logins) { logins.any? ? where('issues."user" IS NULL OR lower(issues."user") NOT IN (?)', logins.map(&:downcase)) : all }
   scope :owner, ->(owner) { joins(:repository).where('repositories.owner = ?', owner) }
   scope :maintainers, -> { where(author_association: MAINTAINER_ASSOCIATIONS) }
 
   scope :label, ->(label) { where('? = ANY(labels)', label) }
+
+  def assignees_without(logins)
+    hidden = logins.map(&:downcase)
+    assignees.to_a.reject { |a| hidden.include?(a.to_s.downcase) }
+  end
 
   def self.labels_with_counts
     from("issues, unnest(issues.labels) AS label")

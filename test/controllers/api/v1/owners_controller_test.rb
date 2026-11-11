@@ -153,6 +153,30 @@ class Api::V1::OwnersControllerTest < ActionDispatch::IntegrationTest
     assert json['active_maintainers'].is_a?(Array)
   end
 
+  test 'show omits hidden users from authors and maintainers' do
+    Owner.create!(host: @host, login: 'Hidden-Author', hidden: true)
+    create_issue(@repository, user: 'hidden-author', number: 650, author_association: 'MEMBER')
+    create_issue(@repository, user: 'maintainer1', number: 651, author_association: 'MEMBER')
+
+    get api_v1_host_owner_path(@host, @owner), as: :json
+    assert_response :success
+
+    assert_includes response.body, 'maintainer1'
+    assert_not_includes response.body, 'hidden-author'
+  end
+
+  test 'maintainers endpoint omits hidden users' do
+    Owner.create!(host: @host, login: 'Hidden-Author', hidden: true)
+    create_issue(@repository, user: 'hidden-author', number: 660, author_association: 'MEMBER')
+    create_issue(@repository, user: 'maintainer1', number: 661, author_association: 'MEMBER')
+
+    get maintainers_api_v1_host_owner_path(@host, @owner), as: :json
+    assert_response :success
+
+    assert_includes response.body, 'maintainer1'
+    assert_not_includes response.body, 'hidden-author'
+  end
+
   test 'show handles owner with no issues' do
     owner_with_no_issues = 'newowner'
     create_repository(@host, full_name: "#{owner_with_no_issues}/empty-repo", owner: owner_with_no_issues)
