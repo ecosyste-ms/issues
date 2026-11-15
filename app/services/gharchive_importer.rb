@@ -36,9 +36,9 @@ class GharchiveImporter
     Rails.logger.info "[GHArchive] Phase 2/4: Parsing JSON events"
     events = parse_jsonl(compressed_data, limit: test_mode ? 100 : nil)
     
-    if test_mode && events.any? { |e| e['type'].in?(%w[IssuesEvent PullRequestEvent]) }
+    if test_mode && events.any? { |e| e['type'] == 'IssuesEvent' }
       # Process just a few events to test
-      test_events = events.select { |e| e['type'].in?(%w[IssuesEvent PullRequestEvent]) }.first(5)
+      test_events = events.select { |e| e['type'] == 'IssuesEvent' }.first(5)
       Rails.logger.info "[GHArchive] TEST MODE: Processing #{test_events.size} test events"
       process_events(test_events)
       
@@ -164,7 +164,9 @@ class GharchiveImporter
     Zlib::GzipReader.new(StringIO.new(compressed_data)).each_line do |line|
       event = JSON.parse(line)
       
-      if event['type'].in?(%w[IssuesEvent PullRequestEvent])
+      # PullRequestEvent payloads carry the pull id rather than the issue id and,
+      # since Oct 2025, no state or timestamps, so PRs come from the issues API.
+      if event['type'] == 'IssuesEvent'
         events << event
         count += 1
         break if limit && count >= limit
@@ -203,8 +205,7 @@ class GharchiveImporter
       @affected_repository_ids << repository.id
       
       repo_issues = 0
-      repo_prs = 0
-      
+
       repo_events.each do |event|
         case event['type']
         when 'IssuesEvent'
@@ -213,18 +214,12 @@ class GharchiveImporter
             all_issues_data << issue_data
             repo_issues += 1
           end
-        when 'PullRequestEvent'
-          pr_data = map_pull_request_event(event, repository)
-          if pr_data
-            all_issues_data << pr_data
-            repo_prs += 1
-          end
         end
       end
       
       processed_repos += 1
       if processed_repos % 100 == 0 || processed_repos == grouped_events.size
-        Rails.logger.info "[GHArchive] Processed #{processed_repos}/#{grouped_events.size} repositories (#{repo_name}: #{repo_issues} issues, #{repo_prs} PRs)"
+        Rails.logger.info "[GHArchive] Processed #{processed_repos}/#{grouped_events.size} repositories (#{repo_name}: #{repo_issues} issues)"
       end
     end
     
@@ -342,54 +337,6 @@ class GharchiveImporter
       assignees: issue['assignees'] ? issue['assignees'].map { |a| a['login'] } : [],
       time_to_close: closed_at.present? ? Time.parse(closed_at) - Time.parse(created_at) : nil
     }
-  end
-
-  def map_pull_request_event(event, repository)
-    pr = event['payload']['pull_request']
-    return nil unless pr
-
-    # GitHub changed the PullRequestEvent structure around Oct 9, 2025
-    # New format only includes: id, number, url, base, head
-    # Old format had 50+ fields including title, state, user, labels, etc.
-    # We'll use whatever data is available, accepting that some fields may be nil
-
-    created_at = pr['created_at']
-    closed_at = pr['closed_at']
-    merged_at = pr['merged_at']
-
-    # Calculate time_to_close safely
-    time_to_close = nil
-    if closed_at.present? && created_at.present?
-      begin
-        time_to_close = Time.parse(closed_at.to_s) - Time.parse(created_at.to_s)
-      rescue ArgumentError => e
-        Rails.logger.warn "[GHArchive] Could not parse timestamps for time_to_close calculation: #{e.message}"
-      end
-    end
-
-    {
-      uuid: pr['id'],
-      host_id: @host.id,
-      repository_id: repository.id,
-      number: pr['number'],
-      state: pr['state'] || 'open', # Default to 'open' for new format
-      title: pr['title'] || "PR ##{pr['number']}", # Default title if missing
-      locked: pr['locked'] || false,
-      comments_count: pr['comments'] || 0,
-      user: pr['user'] ? pr['user']['login'] : nil,
-      author_association: pr['author_association'],
-      pull_request: true,
-      created_at: created_at,
-      updated_at: pr['updated_at'],
-      closed_at: closed_at,
-      merged_at: merged_at,
-      labels: pr['labels'] ? pr['labels'].map { |l| l['name'] } : [],
-      assignees: pr['assignees'] ? pr['assignees'].map { |a| a['login'] } : [],
-      time_to_close: time_to_close
-    }
-  rescue => e
-    Rails.logger.error "[GHArchive] Error mapping PR ##{pr['number']} for #{repository.full_name}: #{e.message}"
-    nil
   end
 
   def bulk_upsert_issues(issues_data)

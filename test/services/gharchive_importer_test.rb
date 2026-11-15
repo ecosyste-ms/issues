@@ -6,29 +6,39 @@ class GharchiveImporterTest < ActiveSupport::TestCase
     @importer = GharchiveImporter.new(@host)
   end
 
-  test "import_hour processes issue and pull request events" do
+  test "import_hour imports issue events and ignores pull request events" do
     date = Date.parse('2024-01-01')
     hour = 12
-    
+
     compressed_data = create_gzip_data(sample_events)
     @importer.stubs(:download_file).returns(compressed_data)
-    
-    assert_difference 'Issue.count', 2 do
+
+    assert_difference 'Issue.count', 1 do
       assert_difference 'Repository.count', 1 do
         @importer.import_hour(date, hour)
       end
     end
-    
+
     issue = Issue.find_by(number: 123)
     assert_equal 'Test Issue', issue.title
     assert_equal false, issue.pull_request
-    
-    pr = Issue.find_by(number: 456)
-    assert_equal 'Test PR', pr.title
-    assert_equal true, pr.pull_request
-    
+    assert_nil Issue.find_by(number: 456)
+
     repo = Repository.find_by(full_name: 'test-owner/test-repo')
     assert_equal 'test-owner', repo.owner
+    assert_equal 1, repo.issues_count
+  end
+
+  test "import_hour leaves the repository sync cursor alone" do
+    last_synced_at = 2.days.ago.change(usec: 0)
+    repository = create(:repository, host: @host, full_name: 'test-owner/test-repo', last_synced_at: last_synced_at)
+    @importer.stubs(:download_file).returns(create_gzip_data(sample_events))
+
+    @importer.import_hour(Date.parse('2024-01-01'), 12)
+
+    repository.reload
+    assert_equal last_synced_at, repository.last_synced_at
+    assert_equal 1, repository.issues_count
   end
 
   test "import_hour skips already imported hours" do
@@ -231,9 +241,7 @@ class GharchiveImporterTest < ActiveSupport::TestCase
     })
     
     @importer.expects(:bulk_upsert_issues).with do |issues_data|
-      issues_data.size == 2 &&
-      issues_data.any? { |issue| issue[:pull_request] == false } &&
-      issues_data.any? { |issue| issue[:pull_request] == true }
+      issues_data.size == 1 && issues_data.none? { |issue| issue[:pull_request] }
     end
     
     @importer.send(:process_events, events)
@@ -303,72 +311,6 @@ class GharchiveImporterTest < ActiveSupport::TestCase
     assert_equal ['assignee1'], result[:assignees]
   end
 
-  test "map_pull_request_event extracts correct data from old format" do
-    event = {
-      'type' => 'PullRequestEvent',
-      'payload' => {
-        'pull_request' => {
-          'id' => 789,
-          'number' => 101,
-          'state' => 'open',
-          'title' => 'Test PR',
-          'locked' => false,
-          'comments' => 2,
-          'user' => { 'login' => 'prauthor' },
-          'author_association' => 'MEMBER',
-          'created_at' => '2024-01-01T12:30:00Z',
-          'updated_at' => '2024-01-01T12:30:00Z',
-          'closed_at' => nil,
-          'merged_at' => nil,
-          'labels' => [],
-          'assignees' => []
-        }
-      }
-    }
-
-    repository = create(:repository, :rails, host: @host)
-    result = @importer.send(:map_pull_request_event, event, repository)
-
-    assert_equal 789, result[:uuid]
-    assert_equal 101, result[:number]
-    assert_equal 'open', result[:state]
-    assert_equal 'Test PR', result[:title]
-    assert_equal true, result[:pull_request]
-    assert_equal 2, result[:comments_count]
-    assert_equal 'prauthor', result[:user]
-    assert_equal [], result[:labels]
-    assert_equal [], result[:assignees]
-  end
-
-  test "map_pull_request_event handles new minimal format with default values" do
-    event = {
-      'type' => 'PullRequestEvent',
-      'payload' => {
-        'pull_request' => {
-          'id' => 2907834030,
-          'number' => 5,
-          'url' => 'https://api.github.com/repos/test-owner/test-repo/pulls/5',
-          'base' => { 'ref' => 'main' },
-          'head' => { 'ref' => 'feature' }
-        }
-      }
-    }
-
-    repository = create(:repository, :rails, host: @host, full_name: 'test-owner/test-repo')
-
-    result = @importer.send(:map_pull_request_event, event, repository)
-
-    assert_not_nil result
-    assert_equal 2907834030, result[:uuid]
-    assert_equal 5, result[:number]
-    assert_equal 'open', result[:state] # Default value
-    assert_equal 'PR #5', result[:title] # Default title
-    assert_equal true, result[:pull_request]
-    assert_equal 0, result[:comments_count]
-    assert_nil result[:user]
-    assert_equal [], result[:labels]
-  end
-
   private
 
   def build_issue_data(uuid, repository, title, pull_request, **options)
@@ -421,21 +363,14 @@ class GharchiveImporterTest < ActiveSupport::TestCase
         'type' => 'PullRequestEvent',
         'repo' => { 'name' => 'test-owner/test-repo' },
         'payload' => {
+          'action' => 'closed',
+          'number' => 456,
           'pull_request' => {
             'id' => 2,
             'number' => 456,
-            'state' => 'open',
-            'title' => 'Test PR',
-            'locked' => false,
-            'comments' => 2,
-            'user' => { 'login' => 'prauthor' },
-            'author_association' => 'MEMBER',
-            'created_at' => '2024-01-01T12:30:00Z',
-            'updated_at' => '2024-01-01T12:30:00Z',
-            'closed_at' => nil,
-            'merged_at' => nil,
-            'labels' => [],
-            'assignees' => []
+            'url' => 'https://api.github.com/repos/test-owner/test-repo/pulls/456',
+            'base' => { 'ref' => 'main' },
+            'head' => { 'ref' => 'feature' }
           }
         }
       },

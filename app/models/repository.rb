@@ -168,6 +168,8 @@ class Repository < ApplicationRecord
 
   def sync_issues(full: false)
     full_reconciliation = full || (github? && last_synced_at.blank?)
+    # Taken before fetching so issues updated mid-sync fall inside the next since window.
+    started_at = Time.now
     process_page = proc do |data|
       next if data.empty?
       
@@ -193,8 +195,9 @@ class Repository < ApplicationRecord
         issues_data,
         unique_by: [:host_id, :uuid],
         update_only: [:number, :state, :title, :locked, :comments_count, 
-                      :user, :author_association, :closed_at, :merged_at, 
-                      :labels, :assignees, :time_to_close, :node_id, :pull_request, :state_reason]
+                      :user, :author_association, :updated_at, :closed_at, :merged_at,
+                      :labels, :assignees, :time_to_close, :node_id, :pull_request, :state_reason],
+        record_timestamps: false
       )
     end
 
@@ -207,11 +210,11 @@ class Repository < ApplicationRecord
 
     issues.reset
     update_issue_counts
+    update(last_synced_at: started_at, status: nil)
     reconciliation.complete if full_reconciliation
   rescue => e
     reconciliation.clear if full_reconciliation
     self.status = 'error'
-    self.last_synced_at = Time.now
     self.save
     raise e
   end
@@ -247,8 +250,6 @@ class Repository < ApplicationRecord
     self.past_year_bot_pull_requests_count = issues.where(pull_request: true).past_year.bot.count
     self.past_year_merged_pull_requests_count = issues.where(pull_request: true).past_year.merged.count
 
-    self.last_synced_at = Time.now
-    self.status = nil
     self.save
   end
 
