@@ -159,6 +159,65 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_empty repository.issues.maintainers.where(user: 'mootari')
   end
 
+  test "incremental GitHub sync closes a pull request merged since it was first seen" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host, full_name: 'opencollective/opencollective-api', last_synced_at: 2.days.ago)
+    create(:issue, repository: repository, host: host, uuid: '5731355752', number: 12270, pull_request: true,
+           state: 'open', merged_at: nil, created_at: 10.days.ago, updated_at: 3.days.ago)
+    merged_at = 1.day.ago.utc.change(usec: 0)
+
+    Hosts::Github.any_instance.stubs(:fetch_random_token).returns('token')
+    stub_request(:get, %r{\Ahttps://api\.github\.com/repos/opencollective/opencollective-api/issues\?.*since=})
+      .to_return(
+        status: 200,
+        headers: { 'Content-Type' => 'application/json' },
+        body: [{
+          id: 5731355752, node_id: 'PR_kwDOAiM0fc8AAAABG8qx-g', number: 12270, title: 'Fix', state: 'closed',
+          locked: false, comments: 0, created_at: 10.days.ago.iso8601, updated_at: merged_at.iso8601,
+          closed_at: merged_at.iso8601, user: { login: 'author' }, labels: [], assignees: [],
+          author_association: 'MEMBER', state_reason: nil,
+          pull_request: { url: 'https://api.github.com/repos/opencollective/opencollective-api/pulls/12270', merged_at: merged_at.iso8601 }
+        }].to_json
+      )
+
+    repository.sync_issues
+
+    issue = repository.issues.find_by(number: 12270)
+    assert_equal 1, repository.issues.where(number: 12270).count
+    assert_equal 'closed', issue.state
+    assert_equal merged_at, issue.merged_at
+    assert_equal merged_at, issue.updated_at
+    assert_in_delta Time.current, repository.reload.last_synced_at, 5
+  end
+
+  test "sync_issues sets the cursor to when the sync started" do
+    host = create(:host)
+    repository = create(:repository, host: host, last_synced_at: 2.days.ago)
+    started_at = Time.current.change(usec: 0)
+    host_api = mock
+    host_api.expects(:load_issues).with(repository).with { travel 10.minutes; true }
+    host.expects(:host_instance).returns(host_api)
+
+    travel_to(started_at) { repository.sync_issues }
+
+    assert_equal started_at, repository.reload.last_synced_at
+  end
+
+  test "failed sync keeps the previous cursor" do
+    host = create(:host)
+    last_synced_at = 2.days.ago.change(usec: 0)
+    repository = create(:repository, host: host, last_synced_at: last_synced_at)
+    host_api = mock
+    host_api.expects(:load_issues).raises(Faraday::TimeoutError)
+    host.expects(:host_instance).returns(host_api)
+
+    assert_raises(Faraday::TimeoutError) { repository.sync_issues }
+
+    repository.reload
+    assert_equal 'error', repository.status
+    assert_equal last_synced_at, repository.last_synced_at
+  end
+
   test "issue_labels_count counts labels across issues" do
     host = create(:host)
     repository = create(:repository, host: host)
