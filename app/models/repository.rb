@@ -170,6 +170,8 @@ class Repository < ApplicationRecord
     full_reconciliation = full || (github? && last_synced_at.blank?)
     # Taken before fetching so issues updated mid-sync fall inside the next since window.
     started_at = Time.now
+    # GitLab issue and merge request ids come from separate sequences, so a uuid match there can be another project's row.
+    reassignable = github? ? [:repository_id] : []
     process_page = proc do |data|
       next if data.empty?
       
@@ -194,8 +196,8 @@ class Repository < ApplicationRecord
       Issue.upsert_all(
         issues_data,
         unique_by: [:host_id, :uuid],
-        update_only: [:number, :state, :title, :locked, :comments_count, 
-                      :user, :author_association, :updated_at, :closed_at, :merged_at,
+        update_only: reassignable + [:number, :state, :title, :locked, :comments_count,
+                      :user, :author_association, :created_at, :updated_at, :closed_at, :merged_at,
                       :labels, :assignees, :time_to_close, :node_id, :pull_request, :state_reason],
         record_timestamps: false
       )
