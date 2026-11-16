@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_21_204324) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_16_094800) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -85,7 +85,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_204324) do
     t.integer "host_id"
     t.index ["host_id", "user"], name: "index_issues_on_host_id_and_user"
     t.index ["host_id", "uuid"], name: "index_issues_on_host_id_and_uuid", unique: true
-    t.index ["repository_id"], name: "index_issues_on_repository_id"
+    t.index ["repository_id", "number"], name: "index_issues_on_repository_id_and_number"
   end
 
   create_table "jobs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
