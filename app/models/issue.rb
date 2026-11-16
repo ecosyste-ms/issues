@@ -29,6 +29,19 @@ class Issue < ApplicationRecord
     assignees.to_a.reject { |a| hidden.include?(a.to_s.downcase) }
   end
 
+  # GH Archive PR rows (pull id uuid, no node_id) that the issues API has since synced under the issue id.
+  def self.delete_gharchive_duplicates(host, from_id: 0, batch_size: 10_000)
+    max_id = maximum(:id).to_i
+    deleted = 0
+    from_id.step(max_id, batch_size) do |start|
+      deleted += where(host_id: host.id, pull_request: true, node_id: nil, id: start...(start + batch_size))
+        .where('EXISTS (SELECT 1 FROM issues m WHERE m.repository_id = issues.repository_id AND m.number = issues.number AND m.pull_request AND m.node_id IS NOT NULL)')
+        .delete_all
+      yield start + batch_size, deleted if block_given?
+    end
+    deleted
+  end
+
   def self.labels_with_counts
     from("issues, unnest(issues.labels) AS label")
       .where("label IS NOT NULL")
