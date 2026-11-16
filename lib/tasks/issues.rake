@@ -11,4 +11,14 @@ namespace :issues do
 
     puts "Reconciled #{repository.full_name}: #{repository.issues_count} issues, #{repository.pull_requests_count} pull requests"
   end
+
+  desc 'Delete GH Archive pull request rows that the issues API has replaced; pass a start id to resume'
+  task :delete_gharchive_duplicates, [:from_id] => :environment do |_task, args|
+    host = Host.find_by_name!('GitHub')
+    from_id = args[:from_id].to_i
+    deleted = Issue.delete_gharchive_duplicates(host, from_id: from_id) do |next_id, total|
+      puts "next id #{next_id}: #{total} deleted" if (next_id - from_id) % 1_000_000 == 0
+    end
+    puts "Deleted #{deleted} duplicate pull request rows"
+  end
 end
