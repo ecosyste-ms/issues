@@ -201,6 +201,16 @@ class Repository < ApplicationRecord
                       :labels, :assignees, :time_to_close, :node_id, :pull_request, :state_reason],
         record_timestamps: false
       )
+
+      # GH Archive stored PRs under their pull id with no node_id; the REST row above supersedes them.
+      if github?
+        pulls = issues_data.select { |i| i[:pull_request] }
+        if pulls.any?
+          issues.where(pull_request: true, node_id: nil, number: pulls.map { |i| i[:number] })
+                .where.not(uuid: pulls.map { |i| i[:uuid].to_s })
+                .delete_all
+        end
+      end
     end
 
     host_loader = host.host_instance

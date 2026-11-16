@@ -215,6 +215,31 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_empty other.issues
   end
 
+  test "GitHub sync removes the GH Archive row for a pull request it fetched" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host, full_name: 'opencollective/opencollective-api', last_synced_at: 2.days.ago)
+    create(:issue, repository: repository, host: host, uuid: '2849826733', number: 12270, pull_request: true, node_id: nil, state: 'open')
+    create(:issue, repository: repository, host: host, uuid: '2849826999', number: 12271, pull_request: true, node_id: nil, state: 'open')
+
+    Hosts::Github.any_instance.stubs(:fetch_random_token).returns('token')
+    stub_request(:get, %r{\Ahttps://api\.github\.com/repos/opencollective/opencollective-api/issues\?.*since=})
+      .to_return(
+        status: 200,
+        headers: { 'Content-Type' => 'application/json' },
+        body: [{
+          id: 3441334628, node_id: 'PR_kwDOBFhNgM6xyz', number: 12270, title: 'Fix expense flow',
+          state: 'closed', locked: false, comments: 0, created_at: 2.weeks.ago.iso8601, updated_at: 1.day.ago.iso8601,
+          closed_at: 1.day.ago.iso8601, user: { login: 'author' }, labels: [], assignees: [], author_association: 'MEMBER',
+          state_reason: nil, pull_request: { merged_at: 1.day.ago.iso8601 }
+        }].to_json
+      )
+
+    repository.sync_issues
+
+    assert_equal [['3441334628', 'closed']], repository.issues.where(number: 12270).pluck(:uuid, :state)
+    assert_equal ['2849826999'], repository.issues.where(number: 12271).pluck(:uuid)
+  end
+
   test "GitLab sync leaves a row with a colliding uuid in its repository" do
     host = create(:host, kind: 'gitlab', name: 'gitlab.com', url: 'https://gitlab.com')
     other = create(:repository, host: host, full_name: 'group/other')
