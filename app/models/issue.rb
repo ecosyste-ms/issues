@@ -42,6 +42,55 @@ class Issue < ApplicationRecord
     deleted
   end
 
+  # Rows another repository's sync overwrote through a uuid collision before sync could reassign them.
+  # A repository's own rows share the GitHub repository id in their node ids; rows with a different one
+  # are deleted. Only a full reconciliation of their own repository restores them, as ordinary syncs
+  # fetch only recently updated items.
+  def self.delete_misplaced_github_rows(host, from_id: 0, batch_size: 10_000)
+    max_id = maximum(:id).to_i
+    deleted = 0
+    home_ids = {}
+    from_id.step(max_id, batch_size) do |start|
+      rows = where(host_id: host.id, id: start...(start + batch_size)).where.not(node_id: nil)
+        .where('EXISTS (SELECT 1 FROM issues m WHERE m.repository_id = issues.repository_id AND m.number = issues.number AND m.node_id IS NOT NULL AND m.id <> issues.id)')
+        .pluck(:id, :repository_id, :node_id)
+      misplaced = rows.filter_map do |id, repository_id, node_id|
+        node_repository_id = github_node_repository_id(node_id)
+        home_id = home_ids.fetch(repository_id) { home_ids[repository_id] = github_repository_id_for(repository_id) }
+        [id, repository_id] if node_repository_id && home_id && node_repository_id != home_id
+      end
+      # Matching repository_id skips rows a concurrent sync has already moved to their own repository.
+      deleted += misplaced.group_by(&:last).sum { |repository_id, pairs| where(id: pairs.map(&:first), repository_id: repository_id).delete_all }
+      yield start + batch_size, deleted if block_given?
+    end
+    deleted
+  end
+
+  # The GitHub repository id at least 80% of a repository's sampled rows decode to, or nil.
+  def self.github_repository_id_for(repository_id)
+    # Legacy ids (MD...) carry no repository id, and older repositories are mostly legacy.
+    ids = where(repository_id: repository_id).where.not(node_id: nil).where.not("node_id LIKE 'MD%'")
+      .limit(100).pluck(:node_id).filter_map { |n| github_node_repository_id(n) }
+    id, count = ids.tally.max_by { |_, c| c }
+    id if ids.size >= 10 && count * 5 >= ids.size * 4
+  end
+
+  # New-format node ids are base64 msgpack of [0, repository id, database id]; legacy ids return nil.
+  def self.github_node_repository_id(node_id)
+    encoded = node_id.to_s[/\A[A-Za-z]+_([A-Za-z0-9_-]+)\z/, 1]
+    return unless encoded
+    bytes = Base64.urlsafe_decode64(encoded + '=' * (-encoded.length % 4)).bytes
+    return unless bytes[0] == 0x93 && bytes[1] == 0x00
+    case bytes[2]
+    when 0x00..0x7f then bytes[2]
+    when 0xcc then bytes[3]
+    when 0xcd then bytes[3, 2].pack('C*').unpack1('n')
+    when 0xce then bytes[3, 4].pack('C*').unpack1('N')
+    end
+  rescue ArgumentError
+    nil
+  end
+
   def self.labels_with_counts
     from("issues, unnest(issues.labels) AS label")
       .where("label IS NOT NULL")
