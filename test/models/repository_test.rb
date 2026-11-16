@@ -190,6 +190,49 @@ class RepositoryTest < ActiveSupport::TestCase
     assert_in_delta Time.current, repository.reload.last_synced_at, 5
   end
 
+  test "GitHub sync takes over a row whose uuid collides with another repository's pull id" do
+    host = create_or_find_github_host
+    other = create(:repository, host: host, full_name: 'opencollective/opencollective-api')
+    create(:issue, repository: other, host: host, uuid: '1955804752', number: 10190, pull_request: true, node_id: nil)
+    repository = create(:repository, host: host, full_name: 'cym13/dirduster', last_synced_at: 2.days.ago)
+
+    Hosts::Github.any_instance.stubs(:fetch_random_token).returns('token')
+    stub_request(:get, %r{\Ahttps://api\.github\.com/repos/cym13/dirduster/issues\?.*since=})
+      .to_return(
+        status: 200,
+        headers: { 'Content-Type' => 'application/json' },
+        body: [{
+          id: 1955804752, node_id: 'I_kwDOBHYdHs50kzZQ', number: 8, title: 'dirduster crashes on start (ubuntu22)',
+          state: 'open', locked: false, comments: 0, created_at: 2.years.ago.iso8601, updated_at: 1.day.ago.iso8601,
+          closed_at: nil, user: { login: 'author' }, labels: [], assignees: [], author_association: 'NONE', state_reason: nil
+        }].to_json
+      )
+
+    repository.sync_issues
+
+    assert_equal [8], repository.issues.pluck(:number)
+    assert_in_delta 2.years.ago, repository.issues.first.created_at, 5
+    assert_empty other.issues
+  end
+
+  test "GitLab sync leaves a row with a colliding uuid in its repository" do
+    host = create(:host, kind: 'gitlab', name: 'gitlab.com', url: 'https://gitlab.com')
+    other = create(:repository, host: host, full_name: 'group/other')
+    create(:issue, repository: other, host: host, uuid: '1234', number: 5, pull_request: false)
+    repository = create(:repository, host: host, full_name: 'group/project', last_synced_at: 2.days.ago)
+
+    Hosts::Gitlab.any_instance.stubs(:load_issues).yields([{
+      uuid: 1234, number: 9, title: 'Merge request', state: 'opened', locked: false, comments_count: 0,
+      created_at: 1.week.ago, updated_at: 1.day.ago, closed_at: nil, user: 'author', labels: [], assignees: [],
+      pull_request: true
+    }])
+
+    repository.sync_issues
+
+    assert_empty repository.issues
+    assert_equal 1, other.issues.count
+  end
+
   test "sync_issues sets the cursor to when the sync started" do
     host = create(:host)
     repository = create(:repository, host: host, last_synced_at: 2.days.ago)
