@@ -52,12 +52,14 @@ class Issue < ApplicationRecord
     home_ids = {}
     from_id.step(max_id, batch_size) do |start|
       rows = where(host_id: host.id, id: start...(start + batch_size)).where.not(node_id: nil)
-        .where('EXISTS (SELECT 1 FROM issues m WHERE m.repository_id = issues.repository_id AND m.number = issues.number AND m.node_id IS NOT NULL AND m.id <> issues.id)')
         .pluck(:id, :repository_id, :node_id)
+      # A repository's rows sit close together by id, so a bounded cache still hits.
+      home_ids.clear if home_ids.size > 100_000
       misplaced = rows.filter_map do |id, repository_id, node_id|
         node_repository_id = github_node_repository_id(node_id)
+        next unless node_repository_id
         home_id = home_ids.fetch(repository_id) { home_ids[repository_id] = github_repository_id_for(repository_id) }
-        [id, repository_id] if node_repository_id && home_id && node_repository_id != home_id
+        [id, repository_id] if home_id && node_repository_id != home_id
       end
       # Matching repository_id skips rows a concurrent sync has already moved to their own repository.
       deleted += misplaced.group_by(&:last).sum { |repository_id, pairs| where(id: pairs.map(&:first), repository_id: repository_id).delete_all }

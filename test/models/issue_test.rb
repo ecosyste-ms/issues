@@ -45,14 +45,16 @@ class IssueTest < ActiveSupport::TestCase
     own = (1..10).map { |n| create(:issue, repository: repository, number: n, node_id: node_id(35861629, n)) }
     misplaced = create(:issue, repository: repository, number: 1, pull_request: true, node_id: node_id(193140650, 99))
     unpaired = create(:issue, repository: repository, number: 99, node_id: node_id(193140650, 98))
+    legacy = create(:issue, repository: repository, number: 100, node_id: 'MDExOlB1bGxSZXF1ZXN0NDk0NDM4NjM=')
 
     tied = create(:repository, host: host)
     tied_rows = [create(:issue, repository: tied, number: 1, node_id: node_id(1, 1)), create(:issue, repository: tied, number: 1, node_id: node_id(2, 1))]
 
-    assert_equal 1, Issue.delete_misplaced_github_rows(host, batch_size: 3)
+    assert_equal 2, Issue.delete_misplaced_github_rows(host, batch_size: 3)
     refute Issue.exists?(misplaced.id)
+    refute Issue.exists?(unpaired.id)
+    assert Issue.exists?(legacy.id)
     assert own.all? { |i| Issue.exists?(i.id) }
-    assert Issue.exists?(unpaired.id)
     assert tied_rows.all? { |i| Issue.exists?(i.id) }
   end
 
@@ -70,6 +72,16 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal 1, Issue.delete_misplaced_github_rows(host)
     refute Issue.exists?(misplaced.id)
     assert legacy.all? { |i| Issue.exists?(i.id) }
+  end
+
+  test "delete_misplaced_github_rows skips the repository lookup for legacy node ids" do
+    host = create_or_find_github_host
+    repository = create(:repository, host: host)
+    legacy = create(:issue, repository: repository, number: 1, node_id: 'MDExOlB1bGxSZXF1ZXN0NDk0NDM4NjM=')
+    Issue.expects(:github_repository_id_for).never
+
+    assert_equal 0, Issue.delete_misplaced_github_rows(host)
+    assert Issue.exists?(legacy.id)
   end
 
   test "delete_misplaced_github_rows skips repositories without a clear majority" do
