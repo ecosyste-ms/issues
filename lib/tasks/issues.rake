@@ -21,4 +21,14 @@ namespace :issues do
     end
     puts "Deleted #{deleted} duplicate pull request rows"
   end
+
+  desc 'Delete GitHub rows attached to the wrong repository by a uuid collision; pass a start id to resume'
+  task :delete_misplaced_github_rows, [:from_id] => :environment do |_task, args|
+    host = Host.find_by_name!('GitHub')
+    from_id = args[:from_id].to_i
+    deleted = Issue.delete_misplaced_github_rows(host, from_id: from_id) do |next_id, total|
+      puts "next id #{next_id}: #{total} deleted" if (next_id - from_id) % 1_000_000 == 0
+    end
+    puts "Deleted #{deleted} misplaced rows"
+  end
 end
