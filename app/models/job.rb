@@ -83,6 +83,12 @@ class Job < ApplicationRecord
     response = conn.get("api/v1/repositories/lookup?url=#{CGI.escape(url)}")
 
     if response.status == 404
+      # The lookup 404s for repositories repos hasn't indexed yet and queues them, so check the forge
+      # before marking one not_found for good.
+      if host&.host_class_defined? && !host.host_instance.repository_missing?(full_name)
+        raise "Repository not yet indexed by repos service: #{url}"
+      end
+
       # Mark repository as not_found
       if host
         repo = existing_repo || host.repositories.create(full_name: full_name)

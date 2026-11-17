@@ -50,6 +50,13 @@ module Hosts
       end
     end
 
+    def repository_missing?(full_name)
+      resp = api_client.get("/api/v1/repos/#{full_name}")
+      return true if resp.status == 404
+      raise_unless_success(resp)
+      false
+    end
+
     # Raising keeps the sync cursor where it was, so the next sync refetches what this one missed.
     def raise_unless_success(resp)
       raise Faraday::Error, "Gitea API returned #{resp.status} for #{resp.env.url}" unless resp.success?

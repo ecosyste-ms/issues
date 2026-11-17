@@ -76,6 +76,13 @@ module Hosts
       first_page.each_page(&block)
     end
 
+    def repository_missing?(full_name)
+      api_client.project(full_name)
+      false
+    rescue ::Gitlab::Error::NotFound
+      true
+    end
+
     # The gem refuses to send requests without a token, but public projects don't need one.
     class AnonymousClient < ::Gitlab::Client
       def authorization_header

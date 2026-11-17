@@ -57,6 +57,10 @@ class Host < ApplicationRecord
     host_class.new(self)
   end
 
+  def host_class_defined?
+    "Hosts::#{kind.capitalize}".safe_constantize.present?
+  end
+
   def to_s
     name
   end

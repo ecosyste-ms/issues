@@ -1,8 +1,83 @@
 require 'test_helper'
 
 class JobTest < ActiveSupport::TestCase
+  setup do
+    REDIS.stubs(:get).returns(nil)
+    stub_request(:get, 'https://gitlab.com/api/v4/projects/test-org%2Ftest-repo')
+      .to_return(status: 404, body: { message: '404 Project Not Found' }.to_json, headers: { 'Content-Type' => 'application/json' })
+  end
+
+  test "sync_issues leaves a repository the forge still has active when repos hasn't indexed it" do
+    host = create(:host, name: 'GitLab', kind: 'gitlab', url: 'https://gitlab.com')
+    existing_repo = create(:repository, host: host, full_name: 'test-org/test-repo', status: nil)
+    job = create(:job, url: 'https://gitlab.com/test-org/test-repo')
+    stub_request(:get, "https://repos.ecosyste.ms/api/v1/repositories/lookup?url=https://gitlab.com/test-org/test-repo")
+      .to_return(status: 404, body: '', headers: {})
+    stub_request(:get, 'https://gitlab.com/api/v4/projects/test-org%2Ftest-repo')
+      .to_return(status: 200, body: { id: 1, path_with_namespace: 'test-org/test-repo' }.to_json, headers: { 'Content-Type' => 'application/json' })
+
+    error = assert_raises(RuntimeError) { job.sync_issues }
+
+    assert_match /not yet indexed/, error.message
+    assert_nil existing_repo.reload.status
+  end
+
+  test "sync_issues checks GitHub before marking a repository not_found" do
+    host = create_or_find_github_host
+    existing_repo = create(:repository, host: host, full_name: 'test-org/test-repo', status: nil)
+    job = create(:job, url: 'https://github.com/test-org/test-repo')
+    stub_request(:get, "https://repos.ecosyste.ms/api/v1/repositories/lookup?url=https://github.com/test-org/test-repo")
+      .to_return(status: 404, body: '', headers: {})
+    Hosts::Github.any_instance.stubs(:fetch_random_token).returns('token')
+    stub_request(:get, 'https://api.github.com/repos/test-org/test-repo')
+      .to_return(status: 200, body: { full_name: 'test-org/test-repo' }.to_json, headers: { 'Content-Type' => 'application/json' })
+
+    assert_raises(RuntimeError) { job.sync_issues }
+    assert_nil existing_repo.reload.status
+
+    stub_request(:get, 'https://api.github.com/repos/test-org/test-repo').to_return(status: 404, body: '{}', headers: { 'Content-Type' => 'application/json' })
+
+    assert_raises(RuntimeError) { job.sync_issues }
+    assert_equal 'not_found', existing_repo.reload.status
+  end
+
+  test "sync_issues checks Gitea before marking a repository not_found" do
+    host = create(:host, name: 'codeberg.org', kind: 'gitea', url: 'https://codeberg.org')
+    existing_repo = create(:repository, host: host, full_name: 'test-org/test-repo', status: nil)
+    job = create(:job, url: 'https://codeberg.org/test-org/test-repo')
+    stub_request(:get, "https://repos.ecosyste.ms/api/v1/repositories/lookup?url=https://codeberg.org/test-org/test-repo")
+      .to_return(status: 404, body: '', headers: {})
+    stub_request(:get, 'https://codeberg.org/api/v1/repos/test-org/test-repo')
+      .to_return(status: 200, body: { full_name: 'test-org/test-repo' }.to_json, headers: { 'Content-Type' => 'application/json' })
+
+    assert_raises(RuntimeError) { job.sync_issues }
+    assert_nil existing_repo.reload.status
+  end
+
+  test "sync_issues marks a repository on a host without a forge check not_found" do
+    host = create(:host, name: 'bitbucket.org', kind: 'bitbucket', url: 'https://bitbucket.org')
+    job = create(:job, url: 'https://bitbucket.org/test-org/test-repo')
+    stub_request(:get, "https://repos.ecosyste.ms/api/v1/repositories/lookup?url=https://bitbucket.org/test-org/test-repo")
+      .to_return(status: 404, body: '', headers: {})
+
+    assert_raises(RuntimeError) { job.sync_issues }
+    assert_equal 'not_found', host.repositories.find_by!(full_name: 'test-org/test-repo').status
+  end
+
+  test "sync_issues leaves the repository active when the forge check fails" do
+    host = create(:host, name: 'GitLab', kind: 'gitlab', url: 'https://gitlab.com')
+    existing_repo = create(:repository, host: host, full_name: 'test-org/test-repo', status: nil)
+    job = create(:job, url: 'https://gitlab.com/test-org/test-repo')
+    stub_request(:get, "https://repos.ecosyste.ms/api/v1/repositories/lookup?url=https://gitlab.com/test-org/test-repo")
+      .to_return(status: 404, body: '', headers: {})
+    stub_request(:get, 'https://gitlab.com/api/v4/projects/test-org%2Ftest-repo')
+      .to_return(status: 500, body: { message: '500' }.to_json, headers: { 'Content-Type' => 'application/json' })
+
+    assert_raises(::Gitlab::Error::InternalServerError) { job.sync_issues }
+    assert_nil existing_repo.reload.status
+  end
   test "sync_issues marks repository as not_found and raises error when repos service returns 404" do
-    host = create(:host, name: 'GitLab', url: 'https://gitlab.com')
+    host = create(:host, name: 'GitLab', kind: 'gitlab', url: 'https://gitlab.com')
     job = create(:job, url: 'https://gitlab.com/test-org/test-repo')
 
     stub_request(:get, "https://repos.ecosyste.ms/api/v1/repositories/lookup?url=https://gitlab.com/test-org/test-repo")
@@ -19,7 +94,7 @@ class JobTest < ActiveSupport::TestCase
   end
 
   test "sync_issues marks existing repository as not_found and raises error when repos service returns 404" do
-    host = create(:host, name: 'GitLab', url: 'https://gitlab.com')
+    host = create(:host, name: 'GitLab', kind: 'gitlab', url: 'https://gitlab.com')
     existing_repo = create(:repository, host: host, full_name: 'test-org/test-repo', status: nil)
     job = create(:job, url: 'https://gitlab.com/test-org/test-repo')
 
@@ -36,7 +111,7 @@ class JobTest < ActiveSupport::TestCase
   end
 
   test "sync_issues continues normally when repos service returns 200" do
-    host = create(:host, name: 'GitLab', url: 'https://gitlab.com')
+    host = create(:host, name: 'GitLab', kind: 'gitlab', url: 'https://gitlab.com')
     job = create(:job, url: 'https://gitlab.com/test-org/test-repo')
 
     response_body = {
@@ -118,7 +193,7 @@ class JobTest < ActiveSupport::TestCase
   end
 
   test "sync_issues raises error for repos already marked as not_found without making API call" do
-    host = create(:host, name: 'GitLab', url: 'https://gitlab.com')
+    host = create(:host, name: 'GitLab', kind: 'gitlab', url: 'https://gitlab.com')
     not_found_repo = create(:repository, host: host, full_name: 'test-org/test-repo', status: 'not_found')
     job = create(:job, url: 'https://gitlab.com/test-org/test-repo')
 
@@ -141,7 +216,7 @@ class JobTest < ActiveSupport::TestCase
   end
 
   test "perform_issue_syncing marks job as error when repository is not_found" do
-    host = create(:host, name: 'GitLab', url: 'https://gitlab.com')
+    host = create(:host, name: 'GitLab', kind: 'gitlab', url: 'https://gitlab.com')
     not_found_repo = create(:repository, host: host, full_name: 'test-org/test-repo', status: 'not_found')
     job = create(:job, url: 'https://gitlab.com/test-org/test-repo', status: 'pending')
 
@@ -153,7 +228,7 @@ class JobTest < ActiveSupport::TestCase
   end
 
   test "perform_issue_syncing marks job as error when repos service returns 404" do
-    host = create(:host, name: 'GitLab', url: 'https://gitlab.com')
+    host = create(:host, name: 'GitLab', kind: 'gitlab', url: 'https://gitlab.com')
     job = create(:job, url: 'https://gitlab.com/test-org/test-repo', status: 'pending')
 
     stub_request(:get, "https://repos.ecosyste.ms/api/v1/repositories/lookup?url=https://gitlab.com/test-org/test-repo")

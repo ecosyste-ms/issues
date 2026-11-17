@@ -46,6 +46,11 @@ module Hosts
       Time.zone.parse(value) if value.present?
     end
 
+    # Hosts without a check report every repository missing, matching the repos service.
+    def repository_missing?(full_name)
+      true
+    end
+
     def initialize(host)
       @host = host
     end

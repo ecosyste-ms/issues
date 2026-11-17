@@ -123,6 +123,13 @@ module Hosts
       importer.import_date_range(start_date, end_date)
     end
 
+    def repository_missing?(full_name)
+      api_client.repository(full_name)
+      false
+    rescue *self.class.api_missing_error_class
+      true
+    end
+
     private
 
     def api_client(token = nil, options = {})
