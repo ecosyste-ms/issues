@@ -17,9 +17,8 @@ module Hosts
     def load_issues(repository)
       options = {state: 'all', order_by: 'updated_at', sort: 'desc', per_page: 100}
       options[:updated_after] = repository.last_synced_at if repository.last_synced_at.present?
-      
-      issues = api_client.issues(repository.full_name, options)
-      while issues.next_page.present?
+
+      each_page_if_enabled(-> { api_client.issues(repository.full_name, options) }) do |issues|
         mapped_issues = issues.map do |issue|
           {
             uuid: issue.id,
@@ -28,9 +27,9 @@ module Hosts
             state: issue.state,
             locked: issue.discussion_locked,
             comments_count: issue.user_notes_count,
-            created_at: issue.created_at,
-            updated_at: issue.updated_at,
-            closed_at: issue.closed_at,
+            created_at: parse_time(issue.created_at),
+            updated_at: parse_time(issue.updated_at),
+            closed_at: parse_time(issue.closed_at),
             user: issue.author.username,
             labels: issue.labels,
             assignees: issue.assignees.map(&:username),
@@ -38,12 +37,10 @@ module Hosts
           }
         end
 
-        yield mapped_issues 
-        issues = issues.next_page
+        yield mapped_issues
       end
 
-      merge_requests = api_client.merge_requests(repository.full_name, options)
-      while merge_requests.next_page.present?
+      each_page_if_enabled(-> { api_client.merge_requests(repository.full_name, options) }) do |merge_requests|
         mapped_merge_requests = merge_requests.map do |merge_request|
           {
             uuid: merge_request.id,
@@ -52,9 +49,11 @@ module Hosts
             state: merge_request.state,
             locked: merge_request.discussion_locked,
             comments_count: merge_request.user_notes_count,
-            created_at: merge_request.created_at,
-            updated_at: merge_request.updated_at,
-            closed_at: merge_request.closed_at,
+            created_at: parse_time(merge_request.created_at),
+            updated_at: parse_time(merge_request.updated_at),
+            # GitLab leaves closed_at empty on merged MRs; GitHub sets it, and time_to_close relies on it.
+            closed_at: parse_time(merge_request.closed_at || merge_request.merged_at),
+            merged_at: parse_time(merge_request.merged_at),
             user: merge_request.author.username,
             labels: merge_request.labels,
             assignees: merge_request.assignees.map(&:username),
@@ -63,11 +62,18 @@ module Hosts
         end
 
         yield mapped_merge_requests
-        merge_requests = merge_requests.next_page
       end
+    end
 
-    rescue IGNORABLE_EXCEPTIONS
-      # merge requests may not be not enabled
+    # Projects can disable issues or merge requests, which fails the first request. Errors on later
+    # pages raise so the sync cursor stays put.
+    def each_page_if_enabled(request, &block)
+      first_page = begin
+        request.call
+      rescue ::Gitlab::Error::NotFound, ::Gitlab::Error::Forbidden
+        return
+      end
+      first_page.each_page(&block)
     end
 
     def api_client
