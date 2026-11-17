@@ -86,6 +86,28 @@ class Hosts::GitlabTest < ActiveSupport::TestCase
     assert_equal 2.days.to_i, mr.time_to_close.to_i
   end
 
+  test 'sync without a token requests public data anonymously' do
+    REDIS.stubs(:get).returns(nil)
+    api = 'https://gitlab.com/api/v4/projects/group%2Fproject'
+    stub_request(:get, %r{\A#{Regexp.escape(api)}/issues\?}).to_return(json([gitlab_item(1, 101)]))
+    stub_request(:get, %r{\A#{Regexp.escape(api)}/merge_requests\?}).to_return(json([gitlab_item(2, 202)]))
+
+    @repository.sync_issues
+
+    assert_equal [1, 2], @repository.issues.order(:number).pluck(:number)
+    assert_not_requested(:get, /gitlab\.com/, headers: { 'PRIVATE-TOKEN' => /.*/ })
+  end
+
+  test 'sync with a token sends it' do
+    REDIS.stubs(:get).returns('glpat-abc')
+    api = 'https://gitlab.com/api/v4/projects/group%2Fproject'
+    stub_request(:get, %r{\A#{Regexp.escape(api)}/(issues|merge_requests)\?}).with(headers: { 'PRIVATE-TOKEN' => 'glpat-abc' }).to_return(json([]))
+
+    @repository.sync_issues
+
+    assert_requested(:get, %r{/issues\?}, headers: { 'PRIVATE-TOKEN' => 'glpat-abc' })
+  end
+
   def json(body, link: nil)
     headers = { 'Content-Type' => 'application/json' }
     headers['Link'] = link if link

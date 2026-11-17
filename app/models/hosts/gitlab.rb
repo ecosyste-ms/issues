@@ -76,8 +76,20 @@ module Hosts
       first_page.each_page(&block)
     end
 
+    # The gem refuses to send requests without a token, but public projects don't need one.
+    class AnonymousClient < ::Gitlab::Client
+      def authorization_header
+        {}
+      end
+    end
+
     def api_client
-      ::Gitlab.client(endpoint: "#{@host.url}/api/v4", private_token:  REDIS.get("gitlab_token:#{@host.id}"))
+      token = REDIS.get("gitlab_token:#{@host.id}")
+      if token.present?
+        ::Gitlab.client(endpoint: "#{@host.url}/api/v4", private_token: token)
+      else
+        AnonymousClient.new(endpoint: "#{@host.url}/api/v4")
+      end
     end
   end
 end
