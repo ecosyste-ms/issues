@@ -27,7 +27,7 @@ class Repository < ApplicationRecord
     github_host = Host.find_by(name: 'GitHub')
     scope = Repository.active
     scope = scope.where.not(host_id: github_host.id) if github_host
-    scope.order('last_synced_at ASC').limit(3000).each(&:sync_async)
+    scope.order(Arel.sql('last_synced_at ASC NULLS FIRST')).limit(3000).each(&:sync_async)
   end
 
   def to_s
