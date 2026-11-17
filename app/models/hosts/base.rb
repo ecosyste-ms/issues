@@ -41,6 +41,11 @@ module Hosts
       ]
     end
 
+    # JSON APIs return timestamps as strings; sync subtracts them to get time_to_close.
+    def parse_time(value)
+      Time.zone.parse(value) if value.present?
+    end
+
     def initialize(host)
       @host = host
     end
