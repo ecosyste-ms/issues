@@ -145,18 +145,19 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, 'hidden-author'
   end
 
-  test 'show returns accepted while a repository is pending' do
+  test 'show returns repository statistics before the first sync' do
     repository = create_repository(@host, full_name: 'pending/repository', last_synced_at: nil)
 
     get api_v1_host_repository_path(@host, repository), as: :json
 
-    assert_response :accepted
+    assert_response :ok
     response_json = JSON.parse(response.body)
-    assert_equal 'pending', response_json['status']
+    assert_equal repository.full_name, response_json['full_name']
+    assert_nil response_json['last_synced_at']
+    assert_equal [], response_json['issue_author_associations_count'].keys
+    assert_equal [], response_json['pull_request_author_associations_count'].keys
     assert_equal api_v1_host_repository_url(@host, repository), response_json['repository_url']
     assert_equal api_v1_host_repository_issues_url(@host, repository), response_json['issues_url']
-    assert_equal '60', response.headers['Retry-After']
-    assert_includes response.headers['Cache-Control'], 'no-store'
   end
 
   test 'show handles repository with different case' do
@@ -205,25 +206,34 @@ class Api::V1::RepositoriesControllerTest < ActionDispatch::IntegrationTest
       get api_v1_repositories_lookup_path, params: { url: url }
     end
     
-    assert_response :accepted
     repository = @host.repositories.find_by!(full_name: full_name)
-    response_json = JSON.parse(response.body)
-    assert_equal 'pending', response_json['status']
-    assert_equal api_v1_host_repository_url(@host, repository), response_json['repository_url']
-    assert_equal api_v1_host_repository_issues_url(@host, repository), response_json['issues_url']
-    assert_equal '60', response.headers['Retry-After']
-    assert_includes response.headers['Cache-Control'], 'no-store'
+    assert_redirected_to api_v1_host_repository_path(@host, repository)
+    follow_redirect!
+
+    assert_response :ok
+    stats = JSON.parse(response.body)
+    assert_equal full_name, stats['full_name']
+    assert_equal [], stats['issue_author_associations_count'].keys
+    assert_equal [], stats['pull_request_author_associations_count'].keys
+
+    get stats['issues_url'], params: { per_page: 1000, pull_request: false }
+
+    assert_response :ok
+    assert_equal [], JSON.parse(response.body)
   end
 
-  test 'lookup returns accepted for a repository that has not synced' do
+  test 'lookup redirects for a repository that has not synced' do
     repository = create_repository(@host, full_name: 'pending/lookup-repository', last_synced_at: nil)
     SyncIssuesWorker.expects(:perform_async).with(anything).returns('fake-job-id')
 
     get api_v1_repositories_lookup_path, params: { url: repository.html_url }
 
-    assert_response :accepted
+    assert_redirected_to api_v1_host_repository_path(@host, repository)
+    follow_redirect!
+
+    assert_response :ok
     response_json = JSON.parse(response.body)
-    assert_equal 'pending', response_json['status']
+    assert_equal repository.full_name, response_json['full_name']
     assert_equal api_v1_host_repository_url(@host, repository), response_json['repository_url']
     assert_equal api_v1_host_repository_issues_url(@host, repository), response_json['issues_url']
   end
