@@ -20,32 +20,32 @@ class Api::V1::IssuesControllerTest < ActionDispatch::IntegrationTest
     assert json.size >= 3
   end
 
-  test 'index creates an unknown repository and returns accepted' do
-    SyncIssuesWorker.expects(:perform_async).with(anything).returns('fake-job-id')
+  test 'index returns not found for an unknown repository' do
+    SyncIssuesWorker.expects(:perform_async).never
 
-    assert_difference 'Repository.count', 1 do
+    assert_no_difference 'Repository.count' do
       get api_v1_host_repository_issues_path(@host, 'new/repository'), as: :json
     end
 
-    assert_response :accepted
-    repository = @host.repositories.find_by!(full_name: 'new/repository')
-    response_json = JSON.parse(response.body)
-    assert_equal 'pending', response_json['status']
-    assert_equal api_v1_host_repository_url(@host, repository), response_json['repository_url']
-    assert_equal api_v1_host_repository_issues_url(@host, repository), response_json['issues_url']
-    assert_equal '60', response.headers['Retry-After']
-    assert_includes response.headers['Cache-Control'], 'no-store'
-    refute_match(/public|max-age|s-maxage/, response.headers['Cache-Control'])
+    assert_response :not_found
   end
 
-  test 'index returns accepted for an existing repository that has not synced' do
+  test 'index returns an issue array for a repository that has not synced' do
     repository = create_repository(@host, full_name: 'pending/repository', last_synced_at: nil)
     SyncIssuesWorker.expects(:perform_async).never
 
     get api_v1_host_repository_issues_path(@host, repository), as: :json
 
-    assert_response :accepted
-    assert_equal 'pending', JSON.parse(response.body)['status']
+    assert_response :ok
+    assert_equal [], JSON.parse(response.body)
+
+    create_issue(repository, number: 101, state: 'open')
+    create_issue(repository, number: 102, state: 'closed')
+
+    get api_v1_host_repository_issues_path(@host, repository, state: 'open'), as: :json
+
+    assert_response :ok
+    assert_equal [101], JSON.parse(response.body).map { |issue| issue['number'] }
   end
 
   test 'index returns success for a synced repository with no issues' do
